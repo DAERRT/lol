@@ -1,0 +1,130 @@
+@model lol.Models.Team
+@using lol.Models
+@using lol.Extensions
+@{
+    ViewData["Title"] = "Детали команды";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var isCreator = Model.CreatorId == currentUserId;
+    var isLeader = Model.LeaderId == currentUserId;
+    var isMember = Model.Members.Any(m => m.Id == currentUserId);
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>@Model.Name</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <dl class="row">
+                    <dt class="col-sm-4">Описание</dt>
+                    <dd class="col-sm-8">@Model.Desc</dd>
+
+                    <dt class="col-sm-4">Создатель</dt>
+                    <dd class="col-sm-8">@Model.Creator.FirstName @Model.Creator.LastName</dd>
+
+                    <dt class="col-sm-4">Лидер</dt>
+                    <dd class="col-sm-8">@(Model.Leader != null ? $"{Model.Leader.FirstName} {Model.Leader.LastName}" : "Не назначен")</dd>
+
+                    <dt class="col-sm-4">Статус</dt>
+                    <dd class="col-sm-8">@Model.Status.GetDisplayName()</dd>
+
+                    <dt class="col-sm-4">Тип команды</dt>
+                    <dd class="col-sm-8">@(Model.IsPrivate ? "Закрытая" : "Открытая")</dd>
+
+                    <dt class="col-sm-4">Дата создания</dt>
+                    <dd class="col-sm-8">@Model.DateCreated.ToString("dd.MM.yyyy HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h4>Участники команды</h4>
+            <div class="list-group">
+                @foreach (var member in Model.Members)
+                {
+                    <div class="list-group-item">
+                        @member.FirstName @member.LastName
+                        @if (member.Id == Model.CreatorId)
+                        {
+                            <span class="badge bg-primary">Создатель</span>
+                        }
+                        @if (member.Id == Model.LeaderId)
+                        {
+                            <span class="badge bg-info">Лидер</span>
+                        }
+                        @if (ViewBag.IsCreator && member.Id != Model.CreatorId)
+                        {
+                            <form asp-action="RemoveMember" method="post" style="display: inline;">
+                                <input type="hidden" name="teamId" value="@Model.Id" />
+                                <input type="hidden" name="userId" value="@member.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm float-end">
+                                    <i class="fas fa-times"></i> Исключить
+                                </button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (ViewBag.IsCreator)
+        {
+            <div class="mt-4 d-flex gap-2">
+                <a asp-action="ManageRequests" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <i class="fas fa-users-cog"></i> Управление заявками
+                    @if (Model.TeamRequests?.Any(r => r.Status == RequestStatus.Pending) == true)
+                    {
+                        <span class="badge bg-danger">@Model.TeamRequests.Count(r => r.Status == RequestStatus.Pending)</span>
+                    }
+                </a>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить команду?');">
+                    <i class="fas fa-trash"></i> Удалить
+                </a>
+            </div>
+        }
+        else if (User.IsInRole("Студент") && !ViewBag.IsMember && !ViewBag.HasPendingRequest && !Model.IsPrivate)
+        {
+            <div class="mt-4">
+                <a asp-action="RequestJoin" asp-route-id="@Model.Id" class="btn btn-success">
+                    <i class="fas fa-user-plus"></i> Подать заявку на вступление
+                </a>
+            </div>
+        }
+        else if (ViewBag.HasPendingRequest)
+        {
+            <div class="mt-4 alert alert-info">
+                Ваша заявка на вступление находится на рассмотрении
+            </div>
+        }
+
+        <div class="mt-4">
+            <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+            @if (ViewBag.IsMember && !ViewBag.IsCreator)
+            {
+                <form asp-action="Leave" method="post" style="display: inline;">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-sign-out-alt"></i> Покинуть команду
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.ExecutorProjects != null && Model.ExecutorProjects.Any())
+        {
+            <div class="mt-3">
+                <strong>Команда работает над проектами:</strong>
+                <ul>
+                @foreach (var project in Model.ExecutorProjects)
+                {
+                    <li><a asp-controller="Project" asp-action="Details" asp-route-id="@project.Id">@project.IdeaName</a></li>
+                }
+                </ul>
+            </div>
+        }
+    </div>
+</div> 

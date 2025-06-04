@@ -1,0 +1,38 @@
+@using lol.Extensions
+@model IEnumerable<lol.Models.ProjectApplication>
+@{
+    ViewData["Title"] = "Мои заявки на проекты";
+}
+<h2>Мои заявки на проекты</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Проект</th>
+            <th>Команда</th>
+            <th>Комментарий</th>
+            <th>Статус</th>
+            <th>Дата подачи</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var app in Model)
+    {
+        <tr>
+            <td>
+                <a asp-controller="Project" asp-action="Details" asp-route-id="@app.Project.Id">
+                    @app.Project.IdeaName
+                </a>
+            </td>
+            <td>
+                <a asp-controller="Team" asp-action="Details" asp-route-id="@app.Team.Id">
+                    @app.Team.Name
+                </a>
+            </td>
+            <td>@app.Message</td>
+            <td>@app.Status.GetDisplayName()</td>
+            <td>@app.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+        </tr>
+    }
+    </tbody>
+</table>
+<a asp-controller="Project" asp-action="Index" class="btn btn-secondary">Назад к проектам</a> 

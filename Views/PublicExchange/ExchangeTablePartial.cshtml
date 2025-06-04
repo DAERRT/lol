@@ -1,0 +1,26 @@
+@model IEnumerable<lol.Models.ProjectExchange>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Нет доступных бирж проектов.</div>
+}
+else
+{
+    <div class="row">
+    @foreach (var exchange in Model)
+    {
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">@exchange.Name</h5>
+                    <p class="card-text">
+                        <b>Период:</b> @exchange.StartDate.ToString("dd.MM.yyyy") - @exchange.EndDate.ToString("dd.MM.yyyy")<br />
+                        <b>Статус:</b> @(exchange.IsActive ? "Активная" : "Неактивная")<br />
+                        <b>Проектов:</b> @(exchange.Projects?.Count ?? 0)
+                    </p>
+                    <a asp-action="Details" asp-route-id="@exchange.Id" class="btn btn-primary">Смотреть проекты</a>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+} 

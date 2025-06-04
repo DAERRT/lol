@@ -1,0 +1,54 @@
+@model IEnumerable<lol.Models.Project>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Нет проектов по заданным условиям.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Название идеи</th>
+                <th>Статус идеи</th>
+                <th>Заказчик</th>
+                <th>Дата создания</th>
+                <th>Команды-исполнители</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.IdeaName</td>
+                <td>@item.Status.GetDisplayName()</td>
+                <td>@item.Customer</td>
+                <td>@item.CreatedAt</td>
+                <td>
+                    @if (item.ExecutorTeams != null && item.ExecutorTeams.Any())
+                    {
+                        <ul>
+                        @foreach (var team in item.ExecutorTeams)
+                        {
+                            <li><a asp-controller="Team" asp-action="Details" asp-route-id="@team.Id">@team.Name</a></li>
+                        }
+                        </ul>
+                    }
+                    else
+                    {
+                        <span class="text-muted">-</span>
+                    }
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Детали</a>
+                    @if (User.IsInRole("Заказчик") && item.Customer == User.Identity.Name && !(item.ProjectExchanges != null && item.ProjectExchanges.Any(e => e.IsActive)))
+                    {
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Редактировать</a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Удалить</a>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+} 

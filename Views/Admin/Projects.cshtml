@@ -1,0 +1,156 @@
+@model IEnumerable<lol.Models.Project>
+@{
+    ViewData["Title"] = "Управление проектами";
+}
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><a class="nav-link" asp-action="Index">Пользователи</a></li>
+    <li class="nav-item"><a class="nav-link active" asp-action="Projects">Проекты</a></li>
+    <li class="nav-item"><a class="nav-link" asp-action="Teams">Команды</a></li>
+    <li class="nav-item"><a class="nav-link" asp-action="ProjectApplications">Заявки на проекты</a></li>
+    <li class="nav-item"><a class="nav-link" asp-action="ProjectExchanges">Биржи проектов</a></li>
+</ul>
+<h2>Управление проектами</h2>
+<form asp-action="Projects" method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="searchString" value="@(ViewData["searchString"] ?? "")" class="form-control" placeholder="Поиск по названию или заказчику..." />
+    </div>
+    <div class="col-md-3">
+        <select name="statusFilter" class="form-select" onchange="this.form.submit()">
+            <option value="">Все статусы</option>
+            @foreach (var status in (List<(string Value, string Display)>)ViewBag.Statuses)
+            {
+                if ((string)ViewData["StatusFilter"] == status.Value)
+                {
+                    <option value="@status.Value" selected>@status.Display</option>
+                }
+                else
+                {
+                    <option value="@status.Value">@status.Display</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Фильтровать</button>
+    </div>
+</form>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Статус</th>
+            <th>Заказчик</th>
+            <th>Дата создания</th>
+            <th>Команды-исполнители</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var project in Model)
+    {
+        <tr>
+            <td>
+                <a asp-controller="Project" asp-action="Details" asp-route-id="@project.Id">@project.IdeaName</a>
+                @if (ViewBag.ExpertReviews != null && ((IDictionary<int, List<lol.Models.ExpertReview>>)ViewBag.ExpertReviews).ContainsKey(project.Id))
+                {
+                    var reviews = ((IDictionary<int, List<lol.Models.ExpertReview>>)ViewBag.ExpertReviews)[project.Id];
+                    if (reviews.Any())
+                    {
+                        <div class="mt-2">
+                            <span class="fw-bold">Оценки экспертов:</span>
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var review in reviews)
+                                {
+                                    <li>
+                                        <span class="badge @(review.IsApproved ? "bg-success" : "bg-danger")">@(review.IsApproved ? "Одобрено" : "Отклонено")</span>
+                                        <span class="ms-1">@review.Expert?.Email</span>
+                                        @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                        {
+                                            <span class="text-muted ms-2">@review.Comment</span>
+                                        }
+                                        <span class="text-muted ms-2">@review.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                }
+            </td>
+            <td>
+                <form asp-action="UpdateProjectStatus" method="post" style="display: inline;" onsubmit="return checkEditComment(this);">
+                    <input type="hidden" name="projectId" value="@project.Id" />
+                    <select name="newStatus" class="form-select form-select-sm status-select" onchange="toggleEditComment(this)">
+                        @foreach (var status in (List<(string Value, string Display)>)ViewBag.Statuses)
+                        {
+                            if (status.Value == "Published")
+                            {
+                                continue; // Не показываем Published
+                            }
+                            if (project.Status.ToString() == status.Value)
+                            {
+                                <option value="@status.Value" selected>@status.Display</option>
+                            }
+                            else
+                            {
+                                <option value="@status.Value">@status.Display</option>
+                            }
+                        }
+                    </select>
+                    <input type="text" name="editComment" class="form-control form-control-sm mt-1 edit-comment-input" placeholder="Комментарий для заказчика" style="display:none; max-width:300px;" maxlength="1000" />
+                    <button type="submit" class="btn btn-sm btn-primary mt-1">Сохранить</button>
+                </form>
+            </td>
+            <td>@project.Customer</td>
+            <td>@project.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+            <td>
+                @if (project.ExecutorTeams != null && project.ExecutorTeams.Any())
+                {
+                    <ul>
+                    @foreach (var team in project.ExecutorTeams)
+                    {
+                        <li><a asp-controller="Team" asp-action="Details" asp-route-id="@team.Id">@team.Name</a></li>
+                    }
+                    </ul>
+                }
+                else
+                {
+                    <span class="text-muted">-</span>
+                }
+            </td>
+            <td>
+                <a asp-controller="Project" asp-action="Edit" asp-route-id="@project.Id" class="btn btn-warning btn-sm">Редактировать</a>
+                <a asp-controller="Project" asp-action="Delete" asp-route-id="@project.Id" class="btn btn-danger btn-sm">Удалить</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+<script>
+function toggleEditComment(select) {
+    var input = select.parentElement.querySelector('.edit-comment-input');
+    if (select.value === 'Editing') {
+        input.style.display = '';
+        input.required = true;
+    } else {
+        input.style.display = 'none';
+        input.required = false;
+        input.value = '';
+    }
+}
+function checkEditComment(form) {
+    var select = form.querySelector('.status-select');
+    var input = form.querySelector('.edit-comment-input');
+    if (select.value === 'Editing' && (!input.value || input.value.trim() === '')) {
+        alert('Пожалуйста, укажите комментарий для заказчика при отправке на редактирование.');
+        input.focus();
+        return false;
+    }
+    return true;
+}
+// Инициализация при загрузке страницы
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-select').forEach(function(select) {
+        toggleEditComment(select);
+    });
+});
+</script> 

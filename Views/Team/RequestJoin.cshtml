@@ -1,0 +1,26 @@
+@model lol.Models.Team
+@{
+    ViewData["Title"] = "Подача заявки на вступление";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Подача заявки на вступление в команду "@Model.Name"</h2>
+    </div>
+    <div class="card-body">
+        <form asp-action="RequestJoin" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            
+            <div class="form-group mb-3">
+                <label for="message" class="form-label">Сообщение для команды</label>
+                <textarea name="message" id="message" class="form-control" rows="4" 
+                    placeholder="Расскажите о себе и почему хотите присоединиться к команде..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Отправить заявку</button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div> 

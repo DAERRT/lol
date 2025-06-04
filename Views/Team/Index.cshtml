@@ -1,0 +1,65 @@
+@model IEnumerable<lol.Models.Team>
+@using lol.Extensions
+@{
+    ViewData["Title"] = "Команды";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Команды</h2>
+    <a asp-action="Create" class="btn btn-primary">Создать команду</a>
+</div>
+
+<form id="team-search-form" method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Поиск по названию или лидеру..." />
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">Все статусы</option>
+            @foreach (var s in (List<lol.Models.TeamStatus>)ViewBag.StatusList)
+            {
+                if (ViewBag.Status != null && ((lol.Models.TeamStatus)ViewBag.Status) == s)
+                {
+                    <option value="@s" selected="selected">@s.GetDisplayName()</option>
+                }
+                else
+                {
+                    <option value="@s">@s.GetDisplayName()</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Сбросить</a>
+    </div>
+</form>
+<div id="team-table-container">
+    @await Html.PartialAsync("TeamTablePartial", Model)
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function loadTeamTable() {
+            var form = $("#team-search-form");
+            $.get("@Url.Action("TeamTablePartial")", form.serialize(), function(data) {
+                $("#team-table-container").html(data);
+            });
+        }
+        $(document).ready(function () {
+            $("#team-search-form input, #team-search-form select").on("input change", function () {
+                loadTeamTable();
+            });
+            $("#team-search-form").on("submit", function (e) {
+                e.preventDefault();
+                loadTeamTable();
+            });
+        });
+    </script>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Команды пока не созданы. Будьте первым, кто создаст команду!
+    </div>
+} 

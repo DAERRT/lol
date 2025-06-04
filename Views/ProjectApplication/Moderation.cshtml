@@ -1,0 +1,53 @@
+@using lol.Extensions
+@model IEnumerable<lol.Models.ProjectApplication>
+@{
+    ViewData["Title"] = "Модерация заявок на проекты";
+}
+<h2>Модерация заявок на проекты</h2>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Проект</th>
+            <th>Команда</th>
+            <th>Комментарий</th>
+            <th>Статус</th>
+            <th>Дата подачи</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var app in Model)
+    {
+        <tr>
+            <td>
+                <a asp-controller="Project" asp-action="Details" asp-route-id="@app.Project.Id">
+                    @app.Project.IdeaName
+                </a>
+            </td>
+            <td>
+                <a asp-controller="Team" asp-action="Details" asp-route-id="@app.Team.Id">
+                    @app.Team.Name
+                </a>
+            </td>
+            <td>@app.Message</td>
+            <td>@app.Status.GetDisplayName()</td>
+            <td>@app.CreatedAt.ToString("g")</td>
+            <td>
+                @if (app.Status == lol.Models.ProjectApplicationStatus.Pending)
+                {
+                    <form asp-action="Moderate" method="post" style="display:inline">
+                        <input type="hidden" name="id" value="@app.Id" />
+                        <button type="submit" name="action" value="approve" class="btn btn-success btn-sm">Одобрить</button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Отклонить</button>
+                    </form>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+<a asp-controller="Project" asp-action="Index" class="btn btn-secondary">Назад к проектам</a> 

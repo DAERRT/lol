@@ -1,0 +1,52 @@
+@model lol.Models.Team
+@{
+    ViewData["Title"] = "Создание команды";
+}
+
+<h2>Создание новой команды</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post" id="createTeamForm">
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" required />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Desc" class="control-label"></label>
+                <textarea asp-for="Desc" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Desc" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <div class="form-check">
+                    <input asp-for="IsPrivate" class="form-check-input" type="checkbox" />
+                    <label asp-for="IsPrivate" class="form-check-label"></label>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Создать команду</button>
+                <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function () {
+            $("#createTeamForm").on("submit", function (e) {
+                if (!this.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+        });
+    </script>
+} 

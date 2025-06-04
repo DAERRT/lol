@@ -1,0 +1,40 @@
+@model IEnumerable<lol.Models.Team>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Нет команд по заданным условиям.</div>
+}
+else
+{
+    <div class="row">
+    @foreach (var team in Model)
+    {
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">@team.Name</h5>
+                    <p class="card-text">@team.Desc</p>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <strong>Создатель:</strong> @team.Creator.UserName<br />
+                            <strong>Лидер:</strong> @team.Leader?.UserName<br />
+                            <strong>Статус:</strong> @team.Status.GetDisplayName()<br />
+                            <strong>Участников:</strong> @team.Members.Count
+                        </small>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a asp-action="Details" asp-route-id="@team.Id" class="btn btn-info">Подробнее</a>
+                        @if (
+                            User.IsInRole("Студент") &&
+                            !team.Members.Any(m => m.Id == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value) &&
+                            !(ViewBag.HasPendingRequest != null && ((Dictionary<int, bool>)ViewBag.HasPendingRequest).ContainsKey(team.Id) && ((Dictionary<int, bool>)ViewBag.HasPendingRequest)[team.Id] )&& !team.IsPrivate
+                        )
+                        {
+                            <a asp-action="RequestJoin" asp-route-id="@team.Id" class="btn btn-success">Подать заявку</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+} 

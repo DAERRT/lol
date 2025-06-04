@@ -1,0 +1,64 @@
+@model IEnumerable<lol.Models.Team>
+@{
+    ViewData["Title"] = "Управление командами";
+}
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><a class="nav-link" asp-action="Index">Пользователи</a></li>
+    <li class="nav-item"><a class="nav-link" asp-action="Projects">Проекты</a></li>
+    <li class="nav-item"><a class="nav-link active" asp-action="Teams">Команды</a></li>
+    <li class="nav-item"><a class="nav-link" asp-action="ProjectApplications">Заявки на проекты</a></li>
+    <li class="nav-item"><a class="nav-link" asp-action="ProjectExchanges">Биржи проектов</a></li>
+</ul>
+<h2>Управление командами</h2>
+<form asp-action="Teams" method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="searchString" value="@(ViewData["searchString"] ?? "")" class="form-control" placeholder="Поиск по названию или лидеру..." />
+    </div>
+    <div class="col-md-3">
+        <select name="statusFilter" class="form-select" onchange="this.form.submit()">
+            <option value="">Все статусы</option>
+            @foreach (var status in (string[])ViewBag.Statuses)
+            {
+                if ((string)ViewData["StatusFilter"] == status)
+                {
+                    <option value="@status" selected>@status</option>
+                }
+                else
+                {
+                    <option value="@status">@status</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Фильтровать</button>
+    </div>
+</form>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Лидер</th>
+            <th>Статус</th>
+            <th>Участников</th>
+            <th>Дата создания</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var team in Model)
+    {
+        <tr>
+            <td><a asp-controller="Team" asp-action="Details" asp-route-id="@team.Id">@team.Name</a></td>
+            <td>@(team.Leader != null ? team.Leader.FirstName + " " + team.Leader.LastName : "-")</td>
+            <td>@team.Status.GetDisplayName()</td>
+            <td>@team.Members.Count</td>
+            <td>@team.DateCreated.ToString("dd.MM.yyyy HH:mm")</td>
+            <td>
+                <a asp-controller="Team" asp-action="Edit" asp-route-id="@team.Id" class="btn btn-warning btn-sm">Редактировать</a>
+                <a asp-controller="Team" asp-action="Delete" asp-route-id="@team.Id" class="btn btn-danger btn-sm">Удалить</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table> 

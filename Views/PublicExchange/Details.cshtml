@@ -1,0 +1,58 @@
+@model lol.Models.ProjectExchange
+@{
+    ViewData["Title"] = "Проекты биржи: " + Model.Name;
+}
+<h2>Проекты биржи: @Model.Name</h2>
+<p>
+    <b>Период:</b> @Model.StartDate.ToString("dd.MM.yyyy") - @Model.EndDate.ToString("dd.MM.yyyy")<br />
+    <b>Статус:</b> @(Model.IsActive ? "Активная" : "Неактивная")
+</p>
+<form id="project-search-form" class="row mb-3">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <div class="col-md-4">
+        <input type="text" name="projectSearch" value="@ViewBag.ProjectSearch" class="form-control" placeholder="Поиск по названию проекта..." />
+    </div>
+    <div class="col-md-3">
+        <select name="projectCustomer" class="form-select">
+            <option value="">Все заказчики</option>
+            @foreach (var c in (List<string>)ViewBag.CustomerList)
+            {
+                if (ViewBag.ProjectCustomer != null && (string)ViewBag.ProjectCustomer == c)
+                {
+                    <option value="@c" selected="selected">@c</option>
+                }
+                else
+                {
+                    <option value="@c">@c</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">Сбросить</a>
+    </div>
+</form>
+<div id="project-table-container">
+    @await Html.PartialAsync("ProjectTablePartial", Model.Projects)
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function loadProjectTable() {
+            var form = $("#project-search-form");
+            $.get("@Url.Action("ProjectTablePartial")", form.serialize(), function(data) {
+                $("#project-table-container").html(data);
+            });
+        }
+        $(document).ready(function () {
+            $("#project-search-form input, #project-search-form select").on("input change", function () {
+                loadProjectTable();
+            });
+            $("#project-search-form").on("submit", function (e) {
+                e.preventDefault();
+                loadProjectTable();
+            });
+        });
+    </script>
+}
+<a asp-action="Index" class="btn btn-secondary mt-3">Назад к биржам</a> 

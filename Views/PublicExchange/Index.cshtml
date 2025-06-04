@@ -1,0 +1,43 @@
+@model IEnumerable<lol.Models.ProjectExchange>
+@{
+    ViewData["Title"] = "Биржи проектов";
+}
+<h2>Биржи проектов</h2>
+<form id="exchange-search-form" method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Поиск по названию биржи..." />
+    </div>
+    <div class="col-md-3">
+        <select name="isActive" class="form-select">
+            <option value="">Все</option>
+            <option value="true" selected="@(ViewBag.IsActive?.ToString() == "True")">Только активные</option>
+            <option value="false" selected="@(ViewBag.IsActive?.ToString() == "False")">Только неактивные</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Сбросить</a>
+    </div>
+</form>
+<div id="exchange-table-container">
+    @await Html.PartialAsync("ExchangeTablePartial", Model)
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function loadExchangeTable() {
+            var form = $("#exchange-search-form");
+            $.get("@Url.Action("ExchangeTablePartial")", form.serialize(), function(data) {
+                $("#exchange-table-container").html(data);
+            });
+        }
+        $(document).ready(function () {
+            $("#exchange-search-form input, #exchange-search-form select").on("input change", function () {
+                loadExchangeTable();
+            });
+            $("#exchange-search-form").on("submit", function (e) {
+                e.preventDefault();
+                loadExchangeTable();
+            });
+        });
+    </script>
+} 

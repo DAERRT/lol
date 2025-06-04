@@ -1,0 +1,32 @@
+@model lol.Models.Project
+
+@{
+    ViewData["Title"] = "Удаление проекта";
+}
+
+<h2>Удаление проекта</h2>
+
+<div class="alert alert-danger">
+    <h4>Вы уверены, что хотите удалить этот проект?</h4>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.IdeaName)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.IdeaName)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Status)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Status)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CreatedAt)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.CreatedAt)</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete" class="mt-3">
+    <input type="hidden" asp-for="Id" />
+    <input type="submit" value="Удалить" class="btn btn-danger" />
+    <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+</form> 

@@ -1,0 +1,14 @@
+@model lol.Models.Team
+@{
+    ViewData["Title"] = "Удаление команды";
+}
+
+<h2>Удаление команды</h2>
+<div class="alert alert-danger">
+    <strong>Внимание!</strong> Это действие необратимо. Команда <b>@Model.Name</b> и все связанные данные будут удалены.
+</div>
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Удалить</button>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Отмена</a>
+</form> 

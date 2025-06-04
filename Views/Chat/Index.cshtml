@@ -1,0 +1,168 @@
+@model List<lol.Models.Chat>
+
+@{
+    ViewData["Title"] = "Мессенджер";
+    var currentUserId = ViewBag.UserId as string;
+}
+
+<h2>Мои чаты</h2>
+
+<div class="mb-3">
+    <input type="text" id="userSearchInput" class="form-control" placeholder="Поиск пользователя для чата..." autocomplete="off" />
+    <div id="userSearchResults" class="list-group"></div>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createGroupChatForm" aria-expanded="false" aria-controls="createGroupChatForm">
+        Создать групповой чат
+    </button>
+    <div class="collapse mt-2" id="createGroupChatForm">
+        <form id="groupChatForm">
+            <input type="text" id="groupChatName" class="form-control mb-2" placeholder="Название группы" required />
+            <input type="text" id="groupUserSearchInput" class="form-control mb-2" placeholder="Добавить пользователя..." autocomplete="off" />
+            <div id="groupUserSearchResults" class="list-group mb-2"></div>
+            <div id="selectedGroupUsers" class="mb-2"></div>
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </form>
+    </div>
+</div>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">У вас пока нет чатов.</div>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var chat in Model)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a asp-action="Messages" asp-route-chatId="@chat.Id">
+                    @if (chat.IsGroup)
+                    {
+                        @(chat.Name ?? "Групповой чат")
+                    }
+                    else if (chat.IsTeamChat)
+                    {
+                        @("Командный чат")
+                    }
+                    else
+                    {
+                        var interlocutor = chat.ChatUsers?.FirstOrDefault(u => u.UserId != currentUserId);
+                        if (interlocutor != null)
+                        {
+                            <img src="@(string.IsNullOrEmpty(interlocutor.User.AvatarPath) ? "/images/avatars/default.png" : interlocutor.User.AvatarPath)"
+                                 alt="Аватарка" style="width:32px;height:32px;border-radius:50%;margin-right:8px;object-fit:cover;vertical-align:middle;" />
+                            @($"{interlocutor.User.FirstName} {interlocutor.User.LastName}")
+                        }
+                        else
+                        {
+                            @("Личный чат")
+                        }
+                    }
+                </a>
+                <span class="badge bg-secondary">@chat.Messages.Count сообщений</span>
+                @if (!chat.IsTeamChat)
+                {
+                    <form asp-action="Delete" method="post" asp-route-chatId="@chat.Id" style="display:inline;" onsubmit="return confirm('Удалить этот чат?');">
+                        <button type="submit" class="btn btn-danger btn-sm ms-2">Удалить</button>
+                    </form>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@section Scripts {
+    <script>
+        $('#userSearchInput').on('input', function () {
+            const query = $(this).val();
+            if (!query) {
+                $('#userSearchResults').empty();
+                return;
+            }
+            $.get('/Chat/SearchUsers', { query: query }, function (data) {
+                let html = '';
+                data.forEach(function (u) {
+                    html += `<button class="list-group-item list-group-item-action" onclick="createPrivateChat('${u.id}')">${u.firstName} ${u.lastName} (${u.userName})</button>`;
+                });
+                $('#userSearchResults').html(html);
+            });
+        });
+
+        function createPrivateChat(userId) {
+            $.post('/Chat/CreatePrivate', { userId: userId }, function (data, status, xhr) {
+                if (xhr.responseURL) {
+                    window.location.href = xhr.responseURL;
+                }
+            });
+        }
+
+        // Для группового чата
+        let selectedGroupUsers = [];
+        $('#groupUserSearchInput').on('input', function () {
+            const query = $(this).val();
+            if (!query) {
+                $('#groupUserSearchResults').empty();
+                return;
+            }
+            $.get('/Chat/SearchUsers', { query: query }, function (data) {
+                let html = '';
+                data.forEach(function (u) {
+                    if (!selectedGroupUsers.includes(u.id)) {
+                        html += `<button type="button" class="list-group-item list-group-item-action" onclick="addUserToGroup('${u.id}', '${u.firstName}', '${u.lastName}', '${u.userName}')">${u.firstName} ${u.lastName} (${u.userName})</button>`;
+                    }
+                });
+                $('#groupUserSearchResults').html(html);
+            });
+        });
+        window.addUserToGroup = function (id, firstName, lastName, userName) {
+            if (!selectedGroupUsers.includes(id)) {
+                selectedGroupUsers.push(id);
+                updateSelectedGroupUsers();
+            }
+            $('#groupUserSearchResults').empty();
+            $('#groupUserSearchInput').val('');
+        }
+        function updateSelectedGroupUsers() {
+            let html = '';
+            selectedGroupUsers.forEach(function (id) {
+                html += `<span class="badge bg-info me-1">${id} <button type='button' class='btn-close btn-close-white btn-sm ms-1' aria-label='Удалить' onclick='removeUserFromGroup("${id}")'></button></span>`;
+            });
+            $('#selectedGroupUsers').html(html);
+        }
+        window.removeUserFromGroup = function (id) {
+            selectedGroupUsers = selectedGroupUsers.filter(u => u !== id);
+            updateSelectedGroupUsers();
+        }
+        $('#groupChatForm').on('submit', function (e) {
+            e.preventDefault();
+            const name = $('#groupChatName').val();
+            if (!name || selectedGroupUsers.length === 0) return;
+            $.post('/Chat/CreateGroup', { name: name, userIds: selectedGroupUsers }, function (data, status, xhr) {
+                if (xhr.responseURL) {
+                    window.location.href = xhr.responseURL;
+                }
+            });
+        });
+
+        // Загрузка списка команд для создания командного чата
+        $.get('/Chat/GetUserTeams', function (data) {
+            let html = '<option value="">Выберите команду</option>';
+            data.forEach(function (team) {
+                html += `<option value="${team.id}">${team.name}</option>`;
+            });
+            $('#teamSelect').html(html);
+        });
+        $('#teamChatForm').on('submit', function (e) {
+            e.preventDefault();
+            const teamId = $('#teamSelect').val();
+            if (!teamId) return;
+            $.post('/Chat/CreateTeamChat', { teamId: teamId }, function (data, status, xhr) {
+                if (xhr.responseURL) {
+                    window.location.href = xhr.responseURL;
+                }
+            });
+        });
+    </script>
+} 

@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "Доступ запрещен";
+}
+
+<div class="text-center">
+    <h1 class="text-danger">@ViewData["Title"]</h1>
+    <h2 class="text-danger">У вас нет доступа к этому ресурсу.</h2>
+    <p>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Вернуться на главную</a>
+    </p>
+</div> 

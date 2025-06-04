@@ -1,0 +1,62 @@
+@model IEnumerable<lol.Models.Project>
+
+@{
+    ViewData["Title"] = "Проекты";
+}
+
+<h2>Проекты</h2>
+
+@if (User.IsInRole("Заказчик"))
+{
+    <p>
+        <a asp-action="Create" class="btn btn-primary">Создать новый проект</a>
+    </p>
+}
+
+<form id="project-search-form" method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Поиск по названию или заказчику..." />
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">Все статусы</option>
+            @foreach (var s in (List<lol.Models.ProjectStatus>)ViewBag.StatusList)
+            {
+                if (ViewBag.Status != null && ((lol.Models.ProjectStatus)ViewBag.Status) == s)
+                {
+                    <option value="@s" selected="selected">@s.GetDisplayName()</option>
+                }
+                else
+                {
+                    <option value="@s">@s.GetDisplayName()</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Сбросить</a>
+    </div>
+</form>
+<div id="project-table-container">
+    @await Html.PartialAsync("ProjectTablePartial", Model)
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function loadProjectTable() {
+            var form = $("#project-search-form");
+            $.get("@Url.Action("ProjectTablePartial")", form.serialize(), function(data) {
+                $("#project-table-container").html(data);
+            });
+        }
+        $(document).ready(function () {
+            $("#project-search-form input, #project-search-form select").on("input change", function () {
+                loadProjectTable();
+            });
+            $("#project-search-form").on("submit", function (e) {
+                e.preventDefault();
+                loadProjectTable();
+            });
+        });
+    </script>
+} 

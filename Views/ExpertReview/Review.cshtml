@@ -1,0 +1,133 @@
+@model lol.Models.Project
+
+@{
+    ViewData["Title"] = "Оценка проекта";
+}
+
+<h2>Оценка проекта</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">@Model.IdeaName</h5>
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Problem)</dt>
+            <dd class="col-sm-9">@Model.Problem</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Solution)</dt>
+            <dd class="col-sm-9">@Model.Solution</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ExpectedResult)</dt>
+            <dd class="col-sm-9">@Model.ExpectedResult</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.NecessaryResources)</dt>
+            <dd class="col-sm-9">@Model.NecessaryResources</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Stack)</dt>
+            <dd class="col-sm-9">
+                @foreach (var tech in (Model.Stack ?? "").Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)))
+                {
+                    <span class="tech-badge" style="background:@StackColorHelper.GetColor(tech)">@tech</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Customer)</dt>
+            <dd class="col-sm-9">@Model.Customer</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Review" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    
+    <div class="form-group mb-3">
+        <label class="form-label">Ваше решение</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="isApproved" id="approve" value="true" required>
+            <label class="form-check-label" for="approve">
+                Одобрить проект
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="isApproved" id="reject" value="false" required>
+            <label class="form-check-label" for="reject">
+                Отклонить проект
+            </label>
+        </div>
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="comment" class="form-label">Комментарий (необязательно)</label>
+        <textarea class="form-control" id="comment" name="comment" rows="3" maxlength="1000"></textarea>
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Отправить оценку</button>
+        <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+    </div>
+</form>
+
+@if (ViewBag.AllReviews != null && ((IEnumerable<dynamic>)ViewBag.AllReviews).Any())
+{
+    <h4 class="mt-5">Оценки других экспертов</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Эксперт</th>
+                    <th>Решение</th>
+                    <th>Комментарий</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var review in (IEnumerable<dynamic>)ViewBag.AllReviews)
+                {
+                    <tr>
+                        <td>
+                            @if (review.Expert != null)
+                            {
+                                @review.Expert.Email
+                            }
+                            else
+                            {
+                                <span class="text-muted">Неизвестно</span>
+                            }
+                            @if (review.ExpertId == (string)ViewBag.CurrentUserId)
+                            {
+                                <span class="badge bg-info ms-1">Вы</span>
+                            }
+                        </td>
+                        <td>
+                            @if (review.IsApproved)
+                            {
+                                <span class="badge bg-success">Одобрено</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Отклонено</span>
+                            }
+                        </td>
+                        <td>@(review.Comment ?? "—")</td>
+                        <td>@review.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .tech-badge {
+        display: inline-block;
+        border-radius: 6px;
+        padding: 4px 12px;
+        margin: 2px 6px 2px 0;
+        font-size: 14px;
+        color: #333;
+        background: #e0e0e0;
+        transition: background 0.2s;
+    }
+    .tech-badge:hover {
+        filter: brightness(0.95);
+    }
+</style> 

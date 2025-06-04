@@ -1,0 +1,142 @@
+@model List<lol.Models.Message>
+@{
+    ViewData["Title"] = "Чат";
+    var chatId = (int)ViewBag.ChatId;
+    var userId = (string)ViewBag.UserId;
+}
+
+<h2>Чат</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 id="chatTitle">Загрузка...</h3>
+    <div id="chatParticipants" class="text-muted"></div>
+    <button id="inviteButton" class="btn btn-outline-primary" style="display: none;">Пригласить участников</button>
+</div>
+<div id="messagesList" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 15px;">
+    @foreach (var msg in Model)
+    {
+        <div class="mb-2 @(msg.UserId == userId ? "text-end" : "text-start")">
+            <span class="fw-bold">@msg.User.FirstName @msg.User.LastName:</span>
+            <span>@msg.Text</span><br />
+            <small class="text-muted">@msg.SentAt.ToLocalTime().ToString("g")</small>
+        </div>
+    }
+</div>
+
+<form id="sendMessageForm" class="d-flex gap-2">
+    <input type="text" id="messageInput" class="form-control" placeholder="Введите сообщение..." autocomplete="off" />
+    <button type="submit" class="btn btn-primary">Отправить</button>
+</form>
+
+<!-- Модальное окно для приглашения участников -->
+<div class="modal fade" id="inviteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Пригласить участников</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="inviteUserSearchInput" class="form-control mb-2" placeholder="Поиск пользователя..." autocomplete="off" />
+                <div id="inviteUserSearchResults" class="list-group mb-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const chatId = @chatId;
+        const userId = '@userId';
+        const userName = '@User.Identity.Name';
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        connection.start().then(function () {
+            connection.invoke("JoinChat", chatId);
+        });
+
+        connection.on("ReceiveMessage", function (msgChatId, msgUserId, message) {
+            if (msgChatId == chatId) {
+                loadMessages();
+            }
+            // Показываем уведомление, если это не твое сообщение
+            if (msgUserId !== userId && window.Notification && Notification.permission === "granted") {
+                new Notification("Новое сообщение в чате", {
+                    body: message,
+                    icon: "/favicon.ico" // или путь к иконке
+                });
+            }
+        });
+
+        connection.on("UserInvited", function (invitedUserId, chatId, chatName) {
+            if (invitedUserId === userId) {
+                // Отправляем уведомление в колокольчик
+                connection.invoke("SendNotification", invitedUserId, "Вас пригласили в чат: " + chatName);
+            }
+        });
+
+        function loadMessages() {
+            $.get('/Chat/Messages?chatId=' + chatId, function (data) {
+                const html = $(data).find('#messagesList').html();
+                $('#messagesList').html(html);
+                $('#messagesList').scrollTop($('#messagesList')[0].scrollHeight);
+            });
+        }
+
+        $('#sendMessageForm').on('submit', function (e) {
+            e.preventDefault();
+            const text = $('#messageInput').val();
+            if (!text) return;
+            $.post('/Chat/SendMessage', { chatId: chatId, text: text }, function () {
+                connection.invoke("SendMessageToChat", chatId, userId, text);
+                $('#messageInput').val('');
+            });
+        });
+
+        // Скроллим вниз при загрузке
+        $(function () {
+            $('#messagesList').scrollTop($('#messagesList')[0].scrollHeight);
+        });
+
+        // Загрузка информации о чате
+        $.get('/Chat/GetChatInfo', { chatId: @ViewBag.ChatId }, function (data) {
+            $('#chatTitle').text(data.name || (data.isGroup ? 'Групповой чат' : data.isTeamChat ? 'Командный чат' : 'Личный чат'));
+            if (data.isGroup || data.isTeamChat) {
+                let participants = data.participants.map(p => p.firstName + ' ' + p.lastName).join(', ');
+                $('#chatParticipants').text('Участники: ' + participants);
+                $('#inviteButton').show();
+            }
+        });
+
+        // Обработка приглашения участников
+        $('#inviteButton').on('click', function () {
+            $('#inviteModal').modal('show');
+        });
+        $('#inviteUserSearchInput').on('input', function () {
+            const query = $(this).val();
+            if (!query) {
+                $('#inviteUserSearchResults').empty();
+                return;
+            }
+            $.get('/Chat/SearchUsers', { query: query }, function (data) {
+                let html = '';
+                data.forEach(function (u) {
+                    html += `<button type="button" class="list-group-item list-group-item-action" onclick="inviteUser('${u.id}')">${u.firstName} ${u.lastName} (${u.userName})</button>`;
+                });
+                $('#inviteUserSearchResults').html(html);
+            });
+        });
+        window.inviteUser = function (userId) {
+            $.post('/Chat/InviteUser', { chatId: @ViewBag.ChatId, userId: userId }, function () {
+                $('#inviteModal').modal('hide');
+                // Перезагружаем информацию о чате
+                $.get('/Chat/GetChatInfo', { chatId: @ViewBag.ChatId }, function (data) {
+                    let participants = data.participants.map(p => p.firstName + ' ' + p.lastName).join(', ');
+                    $('#chatParticipants').text('Участники: ' + participants);
+                });
+            });
+        };
+    </script>
+} 

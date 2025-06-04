@@ -1,0 +1,80 @@
+@model List<lol.Models.Notification>
+
+@{
+    ViewData["Title"] = "Уведомления";
+}
+
+<h2>Уведомления</h2>
+
+<form asp-action="ClearAll" method="post" style="margin-bottom: 20px;">
+    <button type="submit" class="btn btn-danger">Очистить все уведомления</button>
+</form>
+
+<div id="notificationListFull">
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">У вас нет уведомлений.</div>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var notification in Model)
+            {
+                <li class="list-group-item @(notification.IsRead ? "" : "list-group-item-warning")">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>@notification.Message</span>
+                        <small class="text-muted">@notification.CreatedAt.ToLocalTime().ToString("g")</small>
+                    </div>
+                    <div class="mt-2 d-flex gap-2">
+                        @if (!notification.IsRead)
+                        {
+                            <form asp-action="MarkAsRead" method="post" style="display:inline;">
+                                <input type="hidden" name="id" value="@notification.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-success">Пометить как прочитанное</button>
+                            </form>
+                        }
+                        <form asp-action="Delete" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@notification.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                        </form>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        function loadNotificationsFull() {
+            $.get('/Notification/GetUserNotifications', function (data) {
+                let html = '';
+                if (data.length === 0) {
+                    html = '<div class="alert alert-info">У вас нет уведомлений.</div>';
+                } else {
+                    html = '<ul class="list-group">';
+                    data.forEach(function (n) {
+                        html += `<li class="list-group-item${n.isRead ? '' : ' list-group-item-warning'}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>${n.message}</span>
+                                <small class="text-muted">${new Date(n.createdAt).toLocaleString()}</small>
+                            </div>
+                            ${!n.isRead ? `<form method='post' action='/Notification/MarkAsRead' class='mt-2'>
+                                <input type='hidden' name='id' value='${n.id}' />
+                                <button type='submit' class='btn btn-sm btn-outline-success'>Пометить как прочитанное</button>
+                            </form>` : ''}
+                        </li>`;
+                    });
+                    html += '</ul>';
+                }
+                $('#notificationListFull').html(html);
+            });
+        }
+
+        // При первой загрузке страницы
+        $(document).ready(function () {
+            loadNotificationsFull();
+        });
+    </script>
+} 

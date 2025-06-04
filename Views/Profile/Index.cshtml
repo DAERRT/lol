@@ -1,0 +1,100 @@
+@model lol.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Личный кабинет";
+}
+<h2>Личный кабинет</h2>
+<div class="mb-3">
+    <img src="@(string.IsNullOrEmpty(Model.AvatarPath) ? "/images/avatars/default.png" : Model.AvatarPath)"
+         alt="Аватарка"
+         style="max-width: 120px; max-height: 120px; border-radius: 50%; border: 1px solid #ccc;" />
+</div>
+<table class="table">
+    <tr><th>Email</th><td>@Model.Email</td></tr>
+    <tr><th>Имя</th><td>@Model.FirstName</td></tr>
+    <tr><th>Фамилия</th><td>@Model.LastName</td></tr>
+    <tr><th>Группа</th><td>@Model.Group</td></tr>
+    <tr><th>Телефон</th><td>@Model.PhoneNumber</td></tr>
+    <tr><th>Роли</th><td>@(ViewBag.UserRoles != null ? string.Join(", ", ViewBag.UserRoles) : "—")</td></tr>
+</table>
+
+@if (ViewBag.UserRoles.Contains("Тимлид") || ViewBag.UserRoles.Contains("Студент"))
+{
+    <h4>Мои команды</h4>
+    @if (ViewBag.Teams != null && ((IEnumerable<lol.Models.Team>)ViewBag.Teams).Any())
+    {
+        <ul class="list-group mb-3">
+            @foreach (var team in (IEnumerable<lol.Models.Team>)ViewBag.Teams)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <a asp-controller="Team" asp-action="Details" asp-route-id="@team.Id">@team.Name</a>
+                        @if (team.CreatorId == Model.Id)
+                        {
+                            <span class="badge bg-primary ms-2">Создатель</span>
+                        }
+                        else if (team.Members.Any(m => m.Id == Model.Id))
+                        {
+                            <span class="badge bg-info ms-2">Участник</span>
+                        }
+                    </span>
+                    <span class="text-muted">@team.Status.GetDisplayName()</span>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="alert alert-info">Вы не состоите ни в одной команде.</div>
+    }
+}
+
+@if (ViewBag.UserRoles.Contains("Студент") || ViewBag.UserRoles.Contains("Тимлид"))
+{
+    <h4>Мои активные заявки на участие в командах</h4>
+    @if (ViewBag.ActiveRequests != null && ((IEnumerable<lol.Models.TeamRequest>)ViewBag.ActiveRequests).Any())
+    {
+        <ul class="list-group mb-3">
+            @foreach (var req in (IEnumerable<lol.Models.TeamRequest>)ViewBag.ActiveRequests)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <b>@req.Team?.Name</b> — @req.Message
+                    </span>
+                    <span class="badge bg-warning text-dark">На рассмотрении</span>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="alert alert-info">У вас нет активных заявок.</div>
+    }
+}
+
+@if (ViewBag.UserRoles.Contains("Заказчик"))
+{
+    <h4>Мои проекты</h4>
+    @if (ViewBag.Projects != null && ((IEnumerable<lol.Models.Project>)ViewBag.Projects).Any())
+    {
+        <ul class="list-group mb-3">
+            @foreach (var project in (IEnumerable<lol.Models.Project>)ViewBag.Projects)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <a asp-controller="Project" asp-action="Details" asp-route-id="@project.Id">@project.IdeaName</a>
+                        <span class="badge bg-secondary ms-2">@project.Status.GetDisplayName()</span>
+                    </span>
+                    <span class="text-muted">@project.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="alert alert-info">У вас нет проектов в роли заказчика.</div>
+    }
+}
+<a asp-action="Edit" class="btn btn-primary">Редактировать</a>
+<form asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт?');">
+    <button type="submit" class="btn btn-danger">Удалить аккаунт</button>
+</form> 

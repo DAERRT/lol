@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">Портал ВШЦТ</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Главная</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            @if (User.IsInRole("Администратор"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Index">Админ-панель</a>
+                                </li>
+                            }
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Team" asp-action="Index">Команды</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Project" asp-action="Index">Проекты</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="PublicExchange" asp-action="Index">Биржи проектов</a>
+                            </li>
+                            @if (User.IsInRole("Эксперт"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="ExpertReview" asp-action="Index">Оценка проектов</a>
+                                </li>
+                            }
+                            @if (User.IsInRole("Тимлид"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="ProjectApplication" asp-action="MyApplications">Мои заявки</a>
+                                </li>
+                            }
+                            @if (User.IsInRole("Заказчик"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="ProjectApplication" asp-action="Moderation">Модерация заявок</a>
+                                </li>
+                            }
+                            <li class="nav-item position-relative">
+                                <a class="nav-link text-dark" href="#" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="bi bi-bell" style="font-size: 1.5rem;"></span>
+                                    <span id="notificationCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="display:none;">0</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 350px; max-width: 400px;">
+                                    <li id="notificationList">
+                                        <span class="dropdown-item-text">Загрузка...</span>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form id="clearAllNotificationsForm" asp-controller="Notification" asp-action="ClearAll" method="post" style="display:inline;">
+                                            <button type="submit" class="dropdown-item text-danger text-center">Очистить все</button>
+                                        </form>
+                                    </li>
+                                    <li><a class="dropdown-item text-center" href="/Notification/Index">Все уведомления</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Chat" asp-action="Index" title="Чаты">
+                                    <span class="bi bi-chat-dots" style="font-size: 1.5rem;"></span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <span class="nav-link text-dark">
+                                    @User.Identity.Name
+                                    @{
+                                        var roles = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
+                                        if (roles.Any())
+                                        {
+                                            <small class="text-muted">(@string.Join(", ", roles))</small>
+                                        }
+                                    }
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button type="submit" class="btn btn-link nav-link text-dark">Выйти</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Войти</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Регистрация</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2024 - Портал ВШЦТ
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        function loadNotifications() {
+            $.get('/Notification/GetUserNotifications', function (data) {
+                let unreadCount = data.filter(n => !n.isRead).length;
+                if (unreadCount > 0) {
+                    $('#notificationCount').text(unreadCount).show();
+                } else {
+                    $('#notificationCount').hide();
+                }
+                let list = '';
+                if (data.length === 0) {
+                    list = '<span class="dropdown-item-text">У вас нет уведомлений.</span>';
+                } else {
+                    data.slice(0, 5).forEach(function (n) {
+                        list += `
+                            <div class="dropdown-item${n.isRead ? '' : ' fw-bold'}" style="white-space:normal; border-bottom:1px solid #f0f0f0; padding:8px 16px;">
+                                <div>${n.message}</div>
+                                <div class="text-muted small">${new Date(n.createdAt).toLocaleString()}</div>
+                            </div>
+                        `;
+                    });
+                }
+                $('#notificationList').html(list);
+            });
+        }
+
+        $(document).ready(function () {
+            // Загрузка при открытии дропдауна
+            $('#notificationDropdown').on('click', function () {
+                loadNotifications();
+            });
+            // Периодическая проверка (например, каждые 60 секунд)
+            setInterval(loadNotifications, 60000);
+            // Первая загрузка
+            loadNotifications();
+        });
+
+        const connection1 = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .build();
+
+        connection1.on("ReceiveNotification", function (message) {
+            console.log("Получено уведомление через SignalR:", message);
+            loadNotifications();
+            if (typeof loadNotificationsFull === 'function') {
+                loadNotificationsFull();
+            }
+            // Показываем браузерное уведомление
+            if (window.Notification && Notification.permission === "granted") {
+                new Notification("Уведомление", {
+                    body: message,
+                    icon: "/favicon.ico"
+                });
+            }
+        });
+
+        connection1.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        if (window.Notification && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+    </script>
+    <style>
+        .dropdown-item {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 8px 16px;
+            white-space: normal;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html> 

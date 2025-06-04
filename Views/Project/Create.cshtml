@@ -1,0 +1,158 @@
+@model lol.Models.Project
+@{
+    var stackOptions = ViewData["StackOptions"] as List<string> ?? new List<string>();
+    var stackValue = Model?.Stack ?? "";
+    var selectedStack = stackValue.Split(",").Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
+}
+@{
+    ViewData["Title"] = "Создание проекта";
+}
+
+<h2>Создание проекта</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="All" class="alert alert-danger"></div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="IdeaName" class="control-label"></label>
+                <input asp-for="IdeaName" class="form-control" />
+                <span asp-validation-for="IdeaName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Problem" class="control-label"></label>
+                <textarea asp-for="Problem" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Problem" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Solution" class="control-label"></label>
+                <textarea asp-for="Solution" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Solution" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="ExpectedResult" class="control-label"></label>
+                <textarea asp-for="ExpectedResult" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="ExpectedResult" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="NecessaryResources" class="control-label"></label>
+                <textarea asp-for="NecessaryResources" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="NecessaryResources" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Стек технологий</label>
+                <select id="stackSelect" class="form-control">
+                    <option value="">-- Выберите технологию --</option>
+                    @foreach (var option in stackOptions)
+                    {
+                        <option value="@option">@option</option>
+                    }
+                </select>
+                <div id="selectedStackContainer" style="margin-top:10px;"></div>
+                <input type="hidden" asp-for="Stack" id="selectedStackInput" value="@string.Join(",", selectedStack)" />
+                <small class="form-text text-muted">Выберите одну или несколько технологий. Кликните на крестик, чтобы убрать.</small>
+                <span asp-validation-for="Stack" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Создать" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Назад к списку</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const stackColors = {
+            'C#': '#b2dfdb', 'Java': '#ffe082', 'Python': '#c5e1a5', 'JavaScript': '#fff9c4', 'TypeScript': '#b3e5fc',
+            'PHP': '#e1bee7', 'Go': '#b2ebf2', 'Kotlin': '#f8bbd0', 'Swift': '#ffccbc', 'Ruby': '#ffcdd2', 'C++': '#d1c4e9',
+            '.NET': '#d7ccc8', 'ASP.NET': '#cfd8dc', 'Django': '#aed581', 'Flask': '#ffe0b2', 'Spring': '#b9f6ca',
+            'React': '#b3e5fc', 'Angular': '#ffccbc', 'Vue.js': '#c8e6c9', 'Node.js': '#dcedc8', 'Express': '#f0f4c3', 'Laravel': '#f8bbd0'
+        };
+        let selected = [];
+        let allOptions = [];
+        function updateSelectOptions() {
+            const select = document.getElementById('stackSelect');
+            // Сохраняем первый option (заглушку)
+            const firstOption = select.querySelector('option[value=""]');
+            select.innerHTML = '';
+            if (firstOption) select.appendChild(firstOption);
+            allOptions.forEach(function(opt) {
+                if (!selected.includes(opt)) {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.textContent = opt;
+                    select.appendChild(option);
+                }
+            });
+        }
+        function renderStackLabels() {
+            const container = document.getElementById('selectedStackContainer');
+            container.innerHTML = '';
+            selected.forEach(function(tech) {
+                if (!tech) return;
+                const color = stackColors[tech] || '#e0e0e0';
+                const label = document.createElement('span');
+                label.className = 'tech-badge';
+                label.style.background = color;
+                label.textContent = tech;
+                // Крестик
+                const removeBtn = document.createElement('span');
+                removeBtn.innerHTML = ' ×';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.style.marginLeft = '6px';
+                removeBtn.style.color = '#888';
+                removeBtn.onclick = function() {
+                    selected = selected.filter(t => t !== tech);
+                    document.getElementById('selectedStackInput').value = selected.join(',');
+                    renderStackLabels();
+                    updateSelectOptions();
+                };
+                label.appendChild(removeBtn);
+                container.appendChild(label);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Собираем все возможные опции из Razor
+            allOptions = Array.from(document.querySelectorAll('#stackSelect option'))
+                .map(o => o.value)
+                .filter(v => v && v !== '');
+            selected = document.getElementById('selectedStackInput').value.split(',').filter(Boolean);
+            renderStackLabels();
+            updateSelectOptions();
+            document.getElementById('stackSelect').addEventListener('change', function() {
+                const tech = this.value;
+                if (tech && !selected.includes(tech)) {
+                    selected.push(tech);
+                    document.getElementById('selectedStackInput').value = selected.join(',');
+                    renderStackLabels();
+                    updateSelectOptions();
+                }
+                this.value = '';
+            });
+        });
+    </script>
+    <style>
+        .tech-badge {
+            display: inline-block;
+            border-radius: 6px;
+            padding: 4px 12px;
+            margin: 2px 6px 2px 0;
+            font-size: 14px;
+            color: #333;
+            background: #e0e0e0;
+            transition: background 0.2s;
+        }
+        .tech-badge:hover {
+            filter: brightness(0.95);
+        }
+    </style>
+} 
