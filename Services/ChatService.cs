@@ -167,5 +167,13 @@ namespace lol.Services
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<MessageAttachment>> GetChatAttachmentsAsync(int chatId)
+        {
+            return await _context.MessageAttachments
+                .Include(a => a.Message)
+                .Where(a => a.Message.ChatId == chatId)
+                .ToListAsync();
+        }
     }
 } 

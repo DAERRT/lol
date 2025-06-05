@@ -183,5 +183,21 @@ namespace lol.Controllers
                 return Forbid(); // или NotFound()
             return RedirectToAction("Index");
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetChatAttachments(int chatId)
+        {
+            var attachments = await _chatService.GetChatAttachmentsAsync(chatId);
+            var result = attachments.Select(a => new {
+                a.Id,
+                a.FileName,
+                a.FilePath,
+                a.FileSize,
+                a.ContentType,
+                a.MessageId,
+                SentAt = a.Message.SentAt
+            });
+            return Json(result);
+        }
     }
 } 
