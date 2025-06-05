@@ -30,6 +30,7 @@ namespace lol.Services
                 .Where(m => m.ChatId == chatId)
                 .OrderBy(m => m.SentAt)
                 .Include(m => m.User)
+                .Include(m => m.Attachments)
                 .ToListAsync();
         }
 
@@ -78,14 +79,15 @@ namespace lol.Services
         }
 
         // Отправить сообщение
-        public async Task<Message> SendMessageAsync(int chatId, string userId, string text)
+        public async Task<Message> SendMessageAsync(int chatId, string userId, string text, int? replyToMessageId = null)
         {
             var message = new Message
             {
                 ChatId = chatId,
                 UserId = userId,
                 Text = text,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                ReplyToMessageId = replyToMessageId
             };
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
@@ -158,6 +160,12 @@ namespace lol.Services
             _context.Chats.Remove(chat);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task AddMessageWithAttachments(Message message)
+        {
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
         }
     }
 } 

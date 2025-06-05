@@ -1,31 +1,342 @@
 @model List<lol.Models.Message>
 @{
-    ViewData["Title"] = "Чат";
-    var chatId = (int)ViewBag.ChatId;
-    var userId = (string)ViewBag.UserId;
+    Layout = "~/Views/Shared/_MessengerLayout.cshtml";
+    var interlocutor = ViewBag.Interlocutor;
 }
-
-<h2>Чат</h2>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 id="chatTitle">Загрузка...</h3>
-    <div id="chatParticipants" class="text-muted"></div>
-    <button id="inviteButton" class="btn btn-outline-primary" style="display: none;">Пригласить участников</button>
-</div>
-<div id="messagesList" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 15px;">
-    @foreach (var msg in Model)
-    {
-        <div class="mb-2 @(msg.UserId == userId ? "text-end" : "text-start")">
-            <span class="fw-bold">@msg.User.FirstName @msg.User.LastName:</span>
-            <span>@msg.Text</span><br />
-            <small class="text-muted">@msg.SentAt.ToLocalTime().ToString("g")</small>
+<div class="chat-area d-flex flex-column h-100" style="min-height:0;">
+    <div class="chat-header d-flex align-items-center justify-content-between p-3 border-bottom bg-white position-relative">
+        <div class="d-flex align-items-center gap-2 chat-header-clickable" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#userProfileModal">
+            @if (interlocutor != null)
+            {
+                <img src="@(string.IsNullOrEmpty(interlocutor.AvatarPath) ? "/images/avatars/default.png" : interlocutor.AvatarPath)" alt="Аватар" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                <span class="fw-bold">@interlocutor.FirstName @interlocutor.LastName</span>
+            }
+            else
+            {
+                <h4 id="chatTitle" class="mb-0">Загрузка...</h4>
+            }
         </div>
-    }
+        <div class="d-flex align-items-center gap-2">
+            <button id="searchToggleBtn" class="btn btn-light btn-sm" title="Поиск по сообщениям"><i class="bi bi-search"></i></button>
+            <div id="searchBox" class="search-popup shadow-sm p-2 bg-white rounded d-none">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Поиск..." autocomplete="off" style="width: 180px;" />
+                    <button id="searchPrevBtn" class="btn btn-outline-secondary btn-sm px-2"><i class="bi bi-chevron-up"></i></button>
+                    <span id="searchCount" class="small text-muted">0/0</span>
+                    <button id="searchNextBtn" class="btn btn-outline-secondary btn-sm px-2"><i class="bi bi-chevron-down"></i></button>
+                    <button id="searchCloseBtn" class="btn-close ms-1" aria-label="Закрыть"></button>
+                </div>
+            </div>
+            <button id="inviteButton" class="btn btn-outline-primary btn-sm" style="display: none;">+</button>
+        </div>
+    </div>
+    <div id="messagesList" class="flex-grow-1 p-3" style="overflow-y:auto; min-height:0; background: #f8f9fa;">
+        @foreach (var msg in Model)
+        {
+            <div class="mb-2 d-flex @(msg.UserId == ViewBag.UserId ? "justify-content-end" : "justify-content-start") message-item">
+                <div class="message message-bubble @(msg.UserId == ViewBag.UserId ? "my-message" : "their-message") position-relative" data-message-id="@msg.Id">
+                    @if (msg.ReplyToMessage != null)
+                    {
+                        <div class="reply-text reply-quote mb-1 p-2 rounded bg-light border" data-reply-to-id="@msg.ReplyToMessageId">
+                            <span class="fw-bold small">@msg.ReplyToMessage.User.FirstName @msg.ReplyToMessage.User.LastName:</span>
+                            <span class="text-muted small">@msg.ReplyToMessage.Text</span>
+                        </div>
+                    }
+                    <div class="fw-bold small">@msg.User.FirstName @msg.User.LastName</div>
+                    <div class="d-flex align-items-center">
+                        <div class="message-text flex-grow-1">@msg.Text</div>
+                        <button class="btn btn-link btn-sm reply-btn ms-2 px-1 py-0" title="Ответить" data-message-id="@msg.Id" data-message-text="@msg.Text" data-message-author="@msg.User.FirstName @msg.User.LastName"><i class="bi bi-reply"></i></button>
+                    </div>
+                    @if (msg.Attachments != null && msg.Attachments.Any())
+                    {
+                        <div class="attachments-list mt-2">
+                            @foreach (var att in msg.Attachments)
+                            {
+                                <div class="attachment-item d-inline-flex align-items-center me-2 mb-1 p-1 px-2 rounded">
+                                    @if (att.ContentType != null && att.ContentType.StartsWith("image/"))
+                                    {
+                                        <a href="@att.FilePath" target="_blank" class="me-2"><img src="@att.FilePath" alt="@att.FileName" style="max-width:48px;max-height:48px;border-radius:6px;object-fit:cover;box-shadow:0 2px 8px #0001;"></a>
+                                    }
+                                    else
+                                    {
+                                        <span class="file-icon me-2">
+                                            <i class="bi bi-file-earmark"></i>
+                                        </span>
+                                    }
+                                    <div class="file-info">
+                                        <a href="@att.FilePath" target="_blank" class="file-name d-block text-decoration-none text-primary" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@att.FileName</a>
+                                        <span class="file-size small text-muted">@((att.FileSize / 1024.0 / 1024.0).ToString("0.##")) МБ</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="text-muted small text-end mt-1">@msg.SentAt.ToLocalTime().ToString("g")</div>
+                </div>
+            </div>
+        }
+    </div>
+    <div id="replyPreview" class="reply-preview d-none align-items-center p-2 border-start border-4 border-primary bg-light mb-2" style="max-width: 500px;">
+        <span class="fw-bold me-2" id="replyAuthor"></span>
+        <span class="text-muted small me-2" id="replyText"></span>
+        <button type="button" class="btn-close ms-auto" id="cancelReplyBtn" aria-label="Отменить"></button>
+    </div>
+    <div id="filePreviewList" class="file-preview-list mb-2" style="display:none;"></div>
+    <form id="sendMessageForm" class="d-flex p-3 border-top gap-2 bg-white" style="flex-shrink:0; position:relative;">
+        <input type="hidden" id="replyToMessageId" name="replyToMessageId" />
+        <label for="fileInput" class="btn btn-light btn-sm d-flex align-items-center justify-content-center" style="height:38px;width:38px;padding:0;">
+            <i class="bi bi-paperclip" style="font-size:1.3em;"></i>
+        </label>
+        <input type="file" id="fileInput" name="files" multiple style="display:none;" />
+        <textarea id="messageInput" class="form-control message-input-area" placeholder="Введите сообщение..." autocomplete="off" rows="1" style="resize:none;"></textarea>
+        <button type="submit" class="btn btn-primary">Отправить</button>
+    </form>
 </div>
-
-<form id="sendMessageForm" class="d-flex gap-2">
-    <input type="text" id="messageInput" class="form-control" placeholder="Введите сообщение..." autocomplete="off" />
-    <button type="submit" class="btn btn-primary">Отправить</button>
-</form>
+@section Styles {
+    <style>
+        .chat-header { background: #fff; color: #222; position: relative; }
+        .chat-header img { margin-right: 10px; }
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            background: #fff;
+        }
+        #messagesList {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            background: #f8f9fa;
+            min-height: 0;
+        }
+        form#sendMessageForm {
+            flex-shrink: 0;
+            background: #fff;
+        }
+        .message-bubble { max-width: 60%; padding: 10px 15px; border-radius: 16px; background: #f1f3f6; color: #222; box-shadow: 0 2px 8px #0001; }
+        .message-text {
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-line;
+        }
+        .my-message { background: #e6eaff; color: #222; align-self: flex-end; }
+        .their-message { background: #f1f3f6; color: #222; align-self: flex-start; }
+        .search-popup {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            z-index: 10;
+            min-width: 290px;
+            max-width: 340px;
+            padding-right: 0;
+            display: block;
+            box-shadow: 0 4px 16px #0002;
+        }
+        .search-popup.d-none { display: none !important; }
+        .search-popup input { width: 180px; }
+        .highlight-search {
+            background: #fff8c6;
+            border-radius: 4px;
+            padding: 0 2px;
+            font-weight: 500;
+        }
+        .current-search {
+            background: #ffe066 !important;
+            border: 1.5px solid #ffd700;
+            font-weight: bold;
+            box-shadow: 0 0 0 2px #ffd70033;
+        }
+        .reply-btn {
+            opacity: 0.5;
+            font-size: 1.1em;
+            transition: opacity 0.2s;
+            vertical-align: middle;
+        }
+        .message-bubble:hover .reply-btn {
+            opacity: 1;
+        }
+        .reply-preview {
+            border-left: 4px solid #0d6efd;
+            background: #f1f3f6;
+            border-radius: 6px;
+            margin-left: 12px;
+        }
+        .reply-quote {
+            border-left: 3px solid #6c47ff;
+            background: #f6f6ff;
+            font-size: 0.95em;
+        }
+        .message-input-area {
+            min-height: 38px;
+            max-height: 120px;
+            resize: none;
+            overflow-y: auto;
+        }
+        .reply-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .chat-header-clickable:hover {
+            background: #f6f6ff;
+            transition: background 0.2s;
+        }
+        #userProfileModal .modal-content {
+            background: #23232b;
+            color: #fff;
+            border-radius: 16px;
+        }
+        #userProfileModal .modal-header {
+            border-bottom: none;
+        }
+        #userProfileModal .modal-body img {
+            border: 3px solid #6c47ff;
+        }
+        #userProfileModal .nav-tabs .nav-link.active {
+            background: #29293a;
+            color: #fff;
+            border: none;
+        }
+        #userProfileModal .nav-tabs .nav-link {
+            color: #bbb;
+        }
+        .user-profile-sidebar {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 350px;
+            background: rgba(255,255,255,0.20);
+            color: #222;
+            z-index: 1050;
+            box-shadow: -2px 0 16px #0002;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(8px);
+        }
+        .main-content { position: relative; }
+        .user-profile-sidebar.open {
+            transform: translateX(0);
+        }
+        .user-profile-sidebar .sidebar-header {
+            padding: 24px 24px 12px 24px;
+            border-bottom: 1px solid #ececec;
+            background: transparent;
+            position: relative;
+            color: #222;
+        }
+        .user-profile-sidebar .btn-close {
+            position: absolute;
+            right: 16px;
+            top: 24px;
+            filter: none;
+        }
+        .user-profile-sidebar .sidebar-body {
+            flex: 1 1 auto;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .user-profile-sidebar .rounded-circle {
+            border: 3px solid #6c47ff22;
+        }
+        .user-profile-sidebar .nav-tabs .nav-link.active {
+            background: #f6f6ff;
+            color: #6c47ff;
+            border: none;
+        }
+        .user-profile-sidebar .nav-tabs .nav-link {
+            color: #888;
+        }
+        .file-preview-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            min-height: 32px;
+        }
+        .file-preview-item {
+            background: #f6f6ff;
+            border: 1px solid #ececec;
+            border-radius: 8px;
+            padding: 4px 10px 4px 6px;
+            display: flex;
+            align-items: center;
+            font-size: 0.95em;
+            max-width: 220px;
+            box-shadow: 0 2px 8px #0001;
+        }
+        .file-preview-item .file-icon {
+            font-size: 1.2em;
+            margin-right: 6px;
+        }
+        .file-preview-item .file-remove {
+            background: none;
+            border: none;
+            color: #888;
+            margin-left: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        .file-preview-item .file-remove:hover {
+            color: #dc3545;
+        }
+        .file-preview-item .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 110px;
+        }
+        .file-preview-item .file-size {
+            color: #888;
+            font-size: 0.93em;
+            margin-left: 6px;
+        }
+        .attachments-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin-top: 4px;
+        }
+        .attachment-item {
+            background: #f6f6ff;
+            border: 1px solid #ececec;
+            border-radius: 8px;
+            padding: 4px 10px 4px 6px;
+            display: flex;
+            align-items: center;
+            font-size: 0.97em;
+            max-width: 220px;
+            box-shadow: 0 2px 8px #0001;
+            transition: box-shadow 0.2s;
+        }
+        .attachment-item:hover {
+            box-shadow: 0 4px 16px #6c47ff22;
+        }
+        .attachment-item .file-icon {
+            font-size: 1.5em;
+            color: #6c47ff;
+        }
+        .attachment-item .file-info {
+            min-width: 0;
+        }
+        .attachment-item .file-name {
+            font-weight: 500;
+            font-size: 1em;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .attachment-item .file-size {
+            font-size: 0.92em;
+        }
+    </style>
+}
 
 <!-- Модальное окно для приглашения участников -->
 <div class="modal fade" id="inviteModal" tabindex="-1" aria-hidden="true">
@@ -43,11 +354,44 @@
     </div>
 </div>
 
+<!-- Боковая панель профиля пользователя -->
+@if (interlocutor != null)
+{
+<div id="userProfileSidebar" class="user-profile-sidebar">
+    <div class="sidebar-header">
+        <button type="button" class="btn-close btn-close-white float-end" id="closeUserProfileSidebar" aria-label="Закрыть"></button>
+        <h5 class="mt-2">Профиль пользователя</h5>
+    </div>
+    <div class="sidebar-body text-center">
+        <img src="@(string.IsNullOrEmpty(interlocutor.AvatarPath) ? "/images/avatars/default.png" : interlocutor.AvatarPath)" alt="Аватар" class="rounded-circle mb-3" style="width:90px;height:90px;object-fit:cover;">
+        <h4 class="fw-bold mb-1">@interlocutor.FirstName @interlocutor.LastName</h4>
+        <div class="mt-4">
+            <ul class="nav nav-tabs justify-content-center" id="profileTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab" aria-controls="media" aria-selected="true">Медиа</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false">Файлы</button>
+                </li>
+            </ul>
+            <div class="tab-content mt-3" id="profileTabContent">
+                <div class="tab-pane fade show active text-muted" id="media" role="tabpanel" aria-labelledby="media-tab">
+                    <p>Здесь будут медиа из чата.</p>
+                </div>
+                <div class="tab-pane fade text-muted" id="files" role="tabpanel" aria-labelledby="files-tab">
+                    <p>Здесь будут файлы из чата.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
-        const chatId = @chatId;
-        const userId = '@userId';
+        const chatId = @ViewBag.ChatId;
+        const userId = '@ViewBag.UserId';
         const userName = '@User.Identity.Name';
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/chatHub")
@@ -84,16 +428,6 @@
                 $('#messagesList').scrollTop($('#messagesList')[0].scrollHeight);
             });
         }
-
-        $('#sendMessageForm').on('submit', function (e) {
-            e.preventDefault();
-            const text = $('#messageInput').val();
-            if (!text) return;
-            $.post('/Chat/SendMessage', { chatId: chatId, text: text }, function () {
-                connection.invoke("SendMessageToChat", chatId, userId, text);
-                $('#messageInput').val('');
-            });
-        });
 
         // Скроллим вниз при загрузке
         $(function () {
@@ -138,5 +472,266 @@
                 });
             });
         };
+
+        // Поиск по сообщениям
+        let searchResults = [];
+        let currentSearchIndex = 0;
+        function updateSearchHighlights(query) {
+            searchResults = [];
+            currentSearchIndex = 0;
+            $("#messagesList .message-text").each(function(i, el) {
+                const $el = $(el);
+                const text = $el.text();
+                $el.html(text); // сбросить старую подсветку
+                if (query && text.toLowerCase().includes(query.toLowerCase())) {
+                    // Подсветить все совпадения
+                    const regex = new RegExp('('+query+')', 'gi');
+                    $el.html(text.replace(regex, '<span class="highlight-search">$1</span>'));
+                    // Для перехода по совпадениям
+                    $el.closest('.message-item').addClass('search-match');
+                    searchResults.push($el.closest('.message-item')[0]);
+                } else {
+                    $el.closest('.message-item').removeClass('search-match');
+                }
+            });
+            updateSearchCount();
+            highlightCurrentSearch();
+        }
+        function updateSearchCount() {
+            const count = searchResults.length;
+            const current = count ? (currentSearchIndex + 1) : 0;
+            $('#searchCount').text(current + '/' + count);
+        }
+        function highlightCurrentSearch() {
+            $('.current-search').removeClass('current-search');
+            if (searchResults.length > 0) {
+                // Найти все подсвеченные совпадения
+                let allHighlights = [];
+                $('#messagesList .highlight-search').each(function() {
+                    allHighlights.push(this);
+                });
+                // Определить, к какому сообщению относится текущее совпадение
+                let matchIndex = 0;
+                for (let i = 0; i < searchResults.length; i++) {
+                    if (searchResults[i] === searchResults[currentSearchIndex]) {
+                        // Найти n-ое совпадение в этом сообщении
+                        let $msg = $(searchResults[i]);
+                        let highlights = $msg.find('.highlight-search');
+                        if (highlights.length > 0) {
+                            $(highlights[0]).addClass('current-search');
+                            highlights[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        $('#searchToggleBtn').on('click', function() {
+            $('#searchBox').toggleClass('d-none');
+            if (!$('#searchBox').hasClass('d-none')) {
+                $('#searchInput').focus();
+            }
+        });
+        $('#searchCloseBtn').on('click', function() {
+            $('#searchBox').addClass('d-none');
+            $('#searchInput').val('');
+            updateSearchHighlights('');
+        });
+        $('#searchInput').on('input', function() {
+            const query = $(this).val();
+            updateSearchHighlights(query);
+        });
+        $('#searchPrevBtn').on('click', function() {
+            if (searchResults.length === 0) return;
+            currentSearchIndex = (currentSearchIndex - 1 + searchResults.length) % searchResults.length;
+            updateSearchCount();
+            highlightCurrentSearch();
+        });
+        $('#searchNextBtn').on('click', function() {
+            if (searchResults.length === 0) return;
+            currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+            updateSearchCount();
+            highlightCurrentSearch();
+        });
+        // Сброс поиска при смене чата
+        $(function() {
+            $('#searchBox').addClass('d-none');
+            $('#searchInput').val('');
+            updateSearchHighlights('');
+        });
+
+        // --- Ответ на сообщение ---
+        let replyToId = null;
+        $(document).on('click', '.reply-btn', function(e) {
+            e.preventDefault();
+            replyToId = $(this).data('message-id');
+            const text = $(this).data('message-text');
+            const author = $(this).data('message-author');
+            $('#replyToMessageId').val(replyToId);
+            $('#replyAuthor').text(author + ':');
+            $('#replyText').text(text.length > 60 ? text.substring(0, 60) + '…' : text);
+            $('#replyPreview').removeClass('d-none');
+        });
+        $('#cancelReplyBtn').on('click', function() {
+            replyToId = null;
+            $('#replyToMessageId').val('');
+            $('#replyPreview').addClass('d-none');
+        });
+        // --- Исправленная отправка сообщений и файлов ---
+        document.getElementById('sendMessageForm').addEventListener('submit', function(e) {
+            const hasFiles = selectedFiles.length > 0;
+            const text = document.getElementById('messageInput').value.trim();
+            const replyId = document.getElementById('replyToMessageId').value;
+            if (hasFiles) {
+                e.preventDefault();
+                if (selectedFiles.length === 0) return;
+                const formData = new FormData();
+                formData.append('chatId', chatId);
+                formData.append('text', text);
+                formData.append('replyToMessageId', replyId);
+                selectedFiles.forEach(f => formData.append('files', f));
+                fetch('/Chat/SendMessageWithFiles', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        selectedFiles = [];
+                        renderFilePreview();
+                        document.getElementById('messageInput').value = '';
+                        document.getElementById('replyToMessageId').value = '';
+                        $('#replyPreview').addClass('d-none');
+                        replyToId = null;
+                        // Оповещаем других пользователей о новом сообщении с файлом
+                        connection.invoke("SendMessageToChat", chatId, userId, text || '[Файл]');
+                        loadMessages && loadMessages();
+                    } else {
+                        alert(data.error || 'Ошибка при отправке файлов!');
+                    }
+                })
+                .catch(() => alert('Ошибка при отправке файлов!'));
+                return false;
+            } else {
+                // Только текст — обычная отправка через AJAX
+                e.preventDefault();
+                if (!text) return;
+                $.post('/Chat/SendMessage', { chatId: chatId, text: text, replyToMessageId: replyId }, function () {
+                    connection.invoke("SendMessageToChat", chatId, userId, text);
+                    document.getElementById('messageInput').value = '';
+                    document.getElementById('replyToMessageId').value = '';
+                    $('#replyPreview').addClass('d-none');
+                    replyToId = null;
+                });
+                return false;
+            }
+        }, true);
+
+        // Авторасширение textarea
+        function autoGrowTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
+        }
+        $(document).on('input', '#messageInput', function() {
+            autoGrowTextarea(this);
+        });
+        $(function() {
+            autoGrowTextarea(document.getElementById('messageInput'));
+        });
+
+        $(document).on('click', '.reply-text', function() {
+            var replyToId = $(this).data('reply-to-id');
+            if (replyToId) {
+                var targetMessage = $('.message[data-message-id="' + replyToId + '"]');
+                if (targetMessage.length) {
+                    targetMessage[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+
+        // Открыть панель
+        document.querySelector('.chat-header-clickable').onclick = function() {
+            document.getElementById('userProfileSidebar').classList.add('open');
+        };
+        // Закрыть панель
+        document.getElementById('closeUserProfileSidebar').onclick = function() {
+            document.getElementById('userProfileSidebar').classList.remove('open');
+        };
+        // Клик вне панели (опционально)
+        document.addEventListener('mousedown', function(e) {
+            const sidebar = document.getElementById('userProfileSidebar');
+            if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !e.target.classList.contains('chat-header-clickable')) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // --- Файлы ---
+        const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 МБ
+        let selectedFiles = [];
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Б';
+            const k = 1024;
+            const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileIcon(file) {
+            // Можно расширить по типу файла
+            if (file.type.startsWith('image/')) return '<i class="bi bi-file-image"></i>';
+            if (file.type.startsWith('video/')) return '<i class="bi bi-file-earmark-play"></i>';
+            if (file.type.startsWith('audio/')) return '<i class="bi bi-file-music"></i>';
+            if (file.type === 'application/pdf') return '<i class="bi bi-file-earmark-pdf"></i>';
+            if (file.type.startsWith('application/zip') || file.name.endsWith('.rar')) return '<i class="bi bi-file-zip"></i>';
+            return '<i class="bi bi-file-earmark"></i>';
+        }
+
+        function renderFilePreview() {
+            const preview = document.getElementById('filePreviewList');
+            preview.innerHTML = '';
+            if (selectedFiles.length === 0) {
+                preview.style.display = 'none';
+                return;
+            }
+            preview.style.display = 'flex';
+            selectedFiles.forEach((file, idx) => {
+                const div = document.createElement('div');
+                div.className = 'file-preview-item';
+                div.innerHTML = `
+                    <span class="file-icon">${getFileIcon(file)}</span>
+                    <span class="file-name" title="${file.name}">${file.name}</span>
+                    <span class="file-size">${formatBytes(file.size)}</span>
+                    <button type="button" class="file-remove" title="Удалить" data-idx="${idx}"><i class="bi bi-x"></i></button>
+                `;
+                preview.appendChild(div);
+            });
+            // Кнопки удаления
+            preview.querySelectorAll('.file-remove').forEach(btn => {
+                btn.onclick = function() {
+                    const idx = parseInt(this.getAttribute('data-idx'));
+                    selectedFiles.splice(idx, 1);
+                    renderFilePreview();
+                };
+            });
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            let error = '';
+            files.forEach(file => {
+                if (file.size > MAX_FILE_SIZE) {
+                    error = `Файл "${file.name}" превышает 200 МБ и не будет добавлен.`;
+                } else {
+                    selectedFiles.push(file);
+                }
+            });
+            if (error) {
+                alert(error);
+            }
+            // Очищаем input, чтобы можно было выбрать тот же файл снова
+            e.target.value = '';
+            renderFilePreview();
+        });
     </script>
 } 

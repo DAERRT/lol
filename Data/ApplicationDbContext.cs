@@ -21,6 +21,7 @@ namespace lol.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<ExpertReview> ExpertReviews { get; set; }
         public DbSet<ProjectExchange> ProjectExchanges { get; set; }
+        public DbSet<MessageAttachment> MessageAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

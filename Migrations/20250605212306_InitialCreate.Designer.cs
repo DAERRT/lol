@@ -12,8 +12,8 @@ using lol.Data;
 namespace lol.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250523161546_UpdateProjectModel")]
-    partial class UpdateProjectModel
+    [Migration("20250605212306_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -173,6 +173,36 @@ namespace lol.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectProjectExchange", b =>
+                {
+                    b.Property<int>("ProjectExchangesId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProjectExchangesId", "ProjectsId");
+
+                    b.HasIndex("ProjectsId");
+
+                    b.ToTable("ProjectExchangeProjects", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectTeam", b =>
+                {
+                    b.Property<int>("ExecutorProjectsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ExecutorTeamsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ExecutorProjectsId", "ExecutorTeamsId");
+
+                    b.HasIndex("ExecutorTeamsId");
+
+                    b.ToTable("ProjectExecutors", (string)null);
+                });
+
             modelBuilder.Entity("lol.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -180,6 +210,12 @@ namespace lol.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("AvatarPath")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("/images/avatars/default.png");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -250,6 +286,183 @@ namespace lol.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("lol.Models.Chat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsGroup")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTeamChat")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Chats");
+                });
+
+            modelBuilder.Entity("lol.Models.ChatUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChatUsers");
+                });
+
+            modelBuilder.Entity("lol.Models.ExpertReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExpertId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpertId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ExpertReviews");
+                });
+
+            modelBuilder.Entity("lol.Models.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReplyToMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("ReplyToMessageId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("lol.Models.MessageAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("MessageAttachments");
+                });
+
+            modelBuilder.Entity("lol.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("lol.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -265,13 +478,19 @@ namespace lol.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("EditComment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("ExpectedResult")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("IdeaName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Initiator")
                         .IsRequired()
@@ -279,22 +498,26 @@ namespace lol.Migrations
 
                     b.Property<string>("NecessaryResources")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Problem")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Solution")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Stack")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -305,6 +528,66 @@ namespace lol.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("lol.Models.ProjectApplication", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("ProjectApplications");
+                });
+
+            modelBuilder.Entity("lol.Models.ProjectExchange", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProjectExchanges");
                 });
 
             modelBuilder.Entity("lol.Models.Team", b =>
@@ -340,9 +623,6 @@ namespace lol.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ProjectId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -351,8 +631,6 @@ namespace lol.Migrations
                     b.HasIndex("CreatorId");
 
                     b.HasIndex("LeaderId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("Teams");
                 });
@@ -465,6 +743,140 @@ namespace lol.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProjectProjectExchange", b =>
+                {
+                    b.HasOne("lol.Models.ProjectExchange", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectExchangesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("lol.Models.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjectTeam", b =>
+                {
+                    b.HasOne("lol.Models.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ExecutorProjectsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("lol.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("ExecutorTeamsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("lol.Models.ChatUser", b =>
+                {
+                    b.HasOne("lol.Models.Chat", "Chat")
+                        .WithMany("ChatUsers")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("lol.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("lol.Models.ExpertReview", b =>
+                {
+                    b.HasOne("lol.Models.ApplicationUser", "Expert")
+                        .WithMany()
+                        .HasForeignKey("ExpertId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("lol.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Expert");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("lol.Models.Message", b =>
+                {
+                    b.HasOne("lol.Models.Chat", "Chat")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("lol.Models.Message", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId");
+
+                    b.HasOne("lol.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chat");
+
+                    b.Navigation("ReplyToMessage");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("lol.Models.MessageAttachment", b =>
+                {
+                    b.HasOne("lol.Models.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("lol.Models.Notification", b =>
+                {
+                    b.HasOne("lol.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("lol.Models.ProjectApplication", b =>
+                {
+                    b.HasOne("lol.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("lol.Models.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Team");
+                });
+
             modelBuilder.Entity("lol.Models.Team", b =>
                 {
                     b.HasOne("lol.Models.ApplicationUser", "Creator")
@@ -479,16 +891,9 @@ namespace lol.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("lol.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Creator");
 
                     b.Navigation("Leader");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("lol.Models.TeamRequest", b =>
@@ -519,6 +924,18 @@ namespace lol.Migrations
                     b.Navigation("CreatedTeams");
 
                     b.Navigation("LedTeams");
+                });
+
+            modelBuilder.Entity("lol.Models.Chat", b =>
+                {
+                    b.Navigation("ChatUsers");
+
+                    b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("lol.Models.Message", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("lol.Models.Team", b =>
