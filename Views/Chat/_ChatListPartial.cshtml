@@ -19,7 +19,14 @@ else
         var lastMsg = chat.Messages?.OrderByDescending(m => m.SentAt).FirstOrDefault();
         var isActive = activeChatId.HasValue && chat.Id == activeChatId.Value;
         <a href="@Url.Action("Messages", "Chat", new { chatId = chat.Id })" class="chat-list-item d-flex align-items-center @(isActive ? "active" : "")">
-            <img src="@(interlocutor != null && !string.IsNullOrEmpty(interlocutor.AvatarPath) ? interlocutor.AvatarPath : "/images/avatars/default.png")" alt="Аватар" style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:12px;" />
+            @if (chat.IsGroup)
+            {
+                <img src="@(string.IsNullOrEmpty(chat.AvatarPath) ? "/images/avatars/group.png" : chat.AvatarPath)" alt="Аватар" style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:12px;" />
+            }
+            else
+            {
+                <img src="@(interlocutor != null && !string.IsNullOrEmpty(interlocutor.AvatarPath) ? interlocutor.AvatarPath : "/images/avatars/default.png")" alt="Аватар" style="width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:12px;" />
+            }
             <div class="flex-grow-1">
                 <div class="fw-bold">
                     @if (chat.IsGroup)

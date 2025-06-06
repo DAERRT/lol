@@ -54,6 +54,7 @@ namespace lol.Controllers
             else
             {
                 ViewBag.Interlocutor = null;
+                ViewBag.GroupAvatarPath = chat?.AvatarPath ?? "/images/avatars/group.png";
             }
             return View(messages);
         }
@@ -199,6 +200,38 @@ namespace lol.Controllers
                 SentAt = a.Message.SentAt
             });
             return Json(result);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadGroupAvatar(int chatId, IFormFile avatar)
+        {
+            if (avatar == null || avatar.Length == 0)
+                return Json(new { success = false, error = "Файл не выбран" });
+
+            var chat = await _chatService.GetChatInfoByIdAsync(chatId);
+            if (chat == null)
+                return Json(new { success = false, error = "Чат не найден" });
+
+            // Проверка типа файла (только изображения)
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+            if (!allowedTypes.Contains(avatar.ContentType))
+                return Json(new { success = false, error = "Разрешены только изображения" });
+
+            // Сохраняем файл
+            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
+            if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+            var ext = Path.GetExtension(avatar.FileName);
+            var fileName = $"group_{chatId}_{Guid.NewGuid().ToString().Substring(0,8)}{ext}";
+            var filePath = Path.Combine(uploads, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await avatar.CopyToAsync(stream);
+            }
+
+            // Обновляем путь в БД
+            await _chatService.UpdateChatAvatarAsync(chatId, $"/images/avatars/{fileName}");
+
+            return Json(new { success = true, avatarPath = $"/images/avatars/{fileName}" });
         }
     }
 } 

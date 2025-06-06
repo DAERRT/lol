@@ -412,6 +412,47 @@
     </div>
 </div>
 
+@if (interlocutor == null)
+{
+    <div id="groupChatSidebar" class="user-profile-sidebar">
+        <div class="sidebar-header">
+            <button type="button" class="btn-close btn-close-white float-end" id="closeGroupChatSidebar" aria-label="Закрыть"></button>
+            <h5 class="mt-2">Групповой чат</h5>
+        </div>
+        <div class="sidebar-body text-center">
+            <div style="position:relative;display:inline-block;">
+                <img id="groupAvatarImg" src="@(ViewBag.GroupAvatarPath ?? "/images/avatars/group.png")" alt="Аватар группы" class="rounded-circle mb-3" style="width:90px;height:90px;object-fit:cover;">
+                <form id="groupAvatarForm" enctype="multipart/form-data" style="position:absolute;bottom:8px;right:8px;">
+                    <label for="groupAvatarInput" style="cursor:pointer;background:#fff;border-radius:50%;padding:4px;box-shadow:0 2px 8px #0002;">
+                        <i class="bi bi-camera" style="font-size:1.3em;"></i>
+                    </label>
+                    <input type="file" id="groupAvatarInput" name="avatar" accept="image/*" style="display:none;" />
+                </form>
+            </div>
+            <h4 class="fw-bold mb-1" id="groupChatTitle">@ViewBag.ChatTitle ?? "Групповой чат"</h4>
+            <div class="mt-2 mb-3">
+                <div class="small text-muted" id="chatParticipants">Участники: ...</div>
+            </div>
+            <ul class="nav nav-tabs justify-content-center" id="groupProfileTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="group-media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab" aria-controls="media" aria-selected="true">Медиа</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="group-files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="false">Файлы</button>
+                </li>
+            </ul>
+            <div class="tab-content mt-3" id="groupProfileTabContent">
+                <div class="tab-pane fade show active text-muted" id="media" role="tabpanel" aria-labelledby="group-media-tab">
+                    <div id="mediaGallery" class="row g-2 justify-content-center"></div>
+                </div>
+                <div class="tab-pane fade text-muted" id="files" role="tabpanel" aria-labelledby="group-files-tab">
+                    <div id="filesList" class="list-group"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
@@ -676,20 +717,31 @@
 
         // Открыть панель
         const sidebar = document.getElementById('userProfileSidebar');
-        if (sidebar) {
+        const groupSidebar = document.getElementById('groupChatSidebar');
+        if (sidebar || groupSidebar) {
             document.querySelector('.chat-header-clickable').onclick = function() {
-                sidebar.classList.add('open');
+                if (sidebar) sidebar.classList.add('open');
+                if (groupSidebar) groupSidebar.classList.add('open');
+                renderProfileMediaAndFiles();
             };
             const closeBtn = document.getElementById('closeUserProfileSidebar');
-            if (closeBtn) {
+            if (closeBtn && sidebar) {
                 closeBtn.onclick = function() {
                     sidebar.classList.remove('open');
                 };
             }
-            // Клик вне панели (опционально)
+            const closeGroupBtn = document.getElementById('closeGroupChatSidebar');
+            if (closeGroupBtn && groupSidebar) {
+                closeGroupBtn.onclick = function() {
+                    groupSidebar.classList.remove('open');
+                };
+            }
             document.addEventListener('mousedown', function(e) {
-                if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !e.target.classList.contains('chat-header-clickable')) {
+                if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !e.target.classList.contains('chat-header-clickable')) {
                     sidebar.classList.remove('open');
+                }
+                if (groupSidebar && groupSidebar.classList.contains('open') && !groupSidebar.contains(e.target) && !e.target.classList.contains('chat-header-clickable')) {
+                    groupSidebar.classList.remove('open');
                 }
             });
         }
@@ -795,14 +847,6 @@
                 $('#filesList').html(filesHtml || '<div class="text-muted p-2">Нет файлов</div>');
             });
         }
-        // Открытие боковой панели — подгружаем медиа и файлы
-        const profileSidebar = document.getElementById('userProfileSidebar');
-        if (profileSidebar) {
-            document.querySelector('.chat-header-clickable').onclick = function() {
-                profileSidebar.classList.add('open');
-                renderProfileMediaAndFiles();
-            };
-        }
 
         // --- Модальное окно предпросмотра медиа ---
         $(document).on('click', '.attachment-item img, .attachment-item video', function(e) {
@@ -848,6 +892,51 @@
                 $('#mediaPreviewContent').html(html);
                 var modal = new bootstrap.Modal(document.getElementById('mediaPreviewModal'));
                 modal.show();
+            }
+        });
+
+        // Загрузка информации о чате для группового sidebar
+        $(function() {
+            const groupSidebar = document.getElementById('groupChatSidebar');
+            if (groupSidebar) {
+                $.get('/Chat/GetChatInfo', { chatId: @ViewBag.ChatId }, function (data) {
+                    $('#groupChatTitle').text(data.name || 'Групповой чат');
+                    if (data.isGroup || data.isTeamChat) {
+                        let participants = data.participants.map(p => p.firstName + ' ' + p.lastName).join(', ');
+                        $('#chatParticipants').text('Участники: ' + participants);
+                    }
+                });
+            }
+        });
+
+        // JS для загрузки аватарки группы
+        $(function() {
+            const groupAvatarInput = document.getElementById('groupAvatarInput');
+            const groupAvatarForm = document.getElementById('groupAvatarForm');
+            if (groupAvatarInput && groupAvatarForm) {
+                groupAvatarInput.addEventListener('change', function() {
+                    if (!this.files.length) return;
+                    const formData = new FormData();
+                    formData.append('chatId', '@ViewBag.ChatId');
+                    formData.append('avatar', this.files[0]);
+                    $.ajax({
+                        url: '/Chat/UploadGroupAvatar',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(data) {
+                            if (data.success && data.avatarPath) {
+                                $('#groupAvatarImg').attr('src', data.avatarPath + '?_=' + new Date().getTime());
+                            } else {
+                                alert(data.error || 'Ошибка загрузки аватарки!');
+                            }
+                        },
+                        error: function() {
+                            alert('Ошибка загрузки аватарки!');
+                        }
+                    });
+                });
             }
         });
     </script>

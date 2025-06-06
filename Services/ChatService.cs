@@ -183,5 +183,20 @@ namespace lol.Services
                 .Where(a => a.Message.ChatId == chatId)
                 .ToListAsync();
         }
+
+        public async Task UpdateChatAvatarAsync(int chatId, string avatarPath)
+        {
+            var chat = await _context.Chats.FirstOrDefaultAsync(c => c.Id == chatId);
+            if (chat != null)
+            {
+                chat.AvatarPath = avatarPath;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<Chat> GetChatInfoByIdAsync(int chatId)
+        {
+            return await _context.Chats.FirstOrDefaultAsync(c => c.Id == chatId);
+        }
     }
 } 
