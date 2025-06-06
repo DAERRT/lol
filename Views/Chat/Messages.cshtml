@@ -675,20 +675,24 @@
         });
 
         // Открыть панель
-        document.querySelector('.chat-header-clickable').onclick = function() {
-            document.getElementById('userProfileSidebar').classList.add('open');
-        };
-        // Закрыть панель
-        document.getElementById('closeUserProfileSidebar').onclick = function() {
-            document.getElementById('userProfileSidebar').classList.remove('open');
-        };
-        // Клик вне панели (опционально)
-        document.addEventListener('mousedown', function(e) {
-            const sidebar = document.getElementById('userProfileSidebar');
-            if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !e.target.classList.contains('chat-header-clickable')) {
-                sidebar.classList.remove('open');
+        const sidebar = document.getElementById('userProfileSidebar');
+        if (sidebar) {
+            document.querySelector('.chat-header-clickable').onclick = function() {
+                sidebar.classList.add('open');
+            };
+            const closeBtn = document.getElementById('closeUserProfileSidebar');
+            if (closeBtn) {
+                closeBtn.onclick = function() {
+                    sidebar.classList.remove('open');
+                };
             }
-        });
+            // Клик вне панели (опционально)
+            document.addEventListener('mousedown', function(e) {
+                if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !e.target.classList.contains('chat-header-clickable')) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        }
 
         // --- Файлы ---
         const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 МБ

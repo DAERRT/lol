@@ -54,15 +54,23 @@ namespace lol.Services
             return chat;
         }
 
-        // Создать групповый чат
-        public async Task<Chat> CreateGroupChatAsync(string name, List<string> userIds)
+        // Создать групповой чат
+        public async Task<Chat> CreateGroupChatAsync(string name, List<string> userIds, string creatorId)
         {
             var chat = new Chat { Name = name, IsGroup = true, IsTeamChat = false };
             _context.Chats.Add(chat);
             await _context.SaveChangesAsync();
+            
+            // Добавляем создателя чата
+            _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = creatorId });
+            
+            // Добавляем остальных участников
             foreach (var userId in userIds)
             {
-                _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = userId });
+                if (userId != creatorId) // Не добавляем создателя повторно
+                {
+                    _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = userId });
+                }
             }
             await _context.SaveChangesAsync();
             return chat;

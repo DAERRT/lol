@@ -71,7 +71,8 @@ namespace lol.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateGroup(string name, List<string> userIds)
         {
-            var chat = await _chatService.CreateGroupChatAsync(name, userIds);
+            var currentUser = await _userManager.GetUserAsync(User);
+            var chat = await _chatService.CreateGroupChatAsync(name, userIds, currentUser.Id);
             return RedirectToAction("Messages", new { chatId = chat.Id });
         }
 
