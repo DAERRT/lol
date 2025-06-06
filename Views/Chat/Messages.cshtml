@@ -95,6 +95,20 @@
             <i class="bi bi-paperclip" style="font-size:1.3em;"></i>
         </label>
         <input type="file" id="fileInput" name="files" multiple style="display:none;" />
+        <button type="button" id="emojiBtn" class="btn btn-light btn-sm d-flex align-items-center justify-content-center" style="height:38px;width:38px;padding:0;" tabindex="-1" title="Смайлики">
+            <i class="bi bi-emoji-smile" style="font-size:1.3em;"></i>
+        </button>
+        <div id="emojiPanel" class="shadow rounded bg-white p-2" style="display:none;position:absolute;bottom:56px;left:60px;z-index:2000;width:320px;max-width:90vw;">
+            <div class="d-flex mb-2 gap-1" id="emojiCategories">
+                <button type="button" class="btn btn-light btn-sm emoji-cat-btn active" data-cat="smileys">😊</button>
+                <button type="button" class="btn btn-light btn-sm emoji-cat-btn" data-cat="animals">🐻</button>
+                <button type="button" class="btn btn-light btn-sm emoji-cat-btn" data-cat="food">🍔</button>
+                <button type="button" class="btn btn-light btn-sm emoji-cat-btn" data-cat="activity">⚽</button>
+                <button type="button" class="btn btn-light btn-sm emoji-cat-btn" data-cat="travel">🚗</button>
+                <button type="button" class="btn btn-light btn-sm emoji-cat-btn" data-cat="symbols">❤️</button>
+            </div>
+            <div id="emojiList" style="max-height:180px;overflow-y:auto;font-size:1.5em;"></div>
+        </div>
         <textarea id="messageInput" class="form-control message-input-area" placeholder="Введите сообщение..." autocomplete="off" rows="1" style="resize:none;"></textarea>
         <button type="submit" class="btn btn-primary">Отправить</button>
     </form>
@@ -455,6 +469,7 @@
 
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/emoji-button/4.6.2/emoji-button.min.js"></script>
     <script>
         const chatId = @ViewBag.ChatId;
         const userId = '@ViewBag.UserId';
@@ -939,5 +954,67 @@
                 });
             }
         });
+
+        // --- Эмодзи панель ---
+        const emojiData = {
+            smileys: ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","😘","🥰","😗","😙","😚","🙂","🤗","🤩","🤔","🤨","😐","😑","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴","😌","😛","😜","😝","🤤","😒","😓","😔","😕","🙃","🤑","😲","☹️","🙁","😖","😞","😟","😤","😢","😭","😦","😧","😨","😩","🤯","😬","😰","😱","🥵","🥶","😳","🤪","😵","😡","😠","🤬","😷","🤒","🤕","🤢","��","🥴","😇","🥳"],
+            animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🕷","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🦧","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🦥","🦦","🦨","🦡","🐁","��","🐇","🐿","🦔"],
+            food: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🥬","🥒","🌶","🫑","🌽","🥕","🫒","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🥞","🧇","🧀","🍖","🍗","🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🥙","🧆","🥚","🍳","🥘","🍲","🥣","🥗","🍿","🧈","🧂","🥫","🍱","🍘","🍙","🍚","🍛","🍜","🍝","🍠","🍢","🍣","🍤","🍥","🥮","🍡","🥟","🥠","🥡","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","🍼","🥛","☕","🍵","🧃","🥤","🧋","🍶","🍺","🍻","🥂","🍷","🥃","🍸","��","🍾","🧉","🧊"],
+            activity: ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🪀","🏓","🏸","🥅","🏒","🏑","🏏","🥍","🏹","🎣","🤿","🥊","🥋","🎽","🛹","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋️‍♂️","🏋️‍♀️","🤼‍♂️","🤼‍♀️","🤸‍♂️","🤸‍♀️","⛹️‍♂️","⛹️‍♀️","🤺","🤾‍♂️","🤾‍♀️","🏌️‍♂️","🏌️‍♀️","🏇","🧘‍♂️","🧘‍♀️","🏄‍♂️","🏄‍♀️","🏊‍♂️","🏊‍♀️","🤽‍♂️","🤽‍♀️","🚣‍♂️","🚣‍♀️","🧗‍♂️","🧗‍♀️","🚵‍♂️","🚵‍♀️","🚴‍♂️","🚴‍♀️","🏆","🥇","🥈","🥉","🏅","🎖","🏵","🎗","🎫","🎟","🎪","🤹‍♂️","🤹‍♀️","🎭","🩰","🎨","🎬","🎤","🎧","🎼","🎹","🥁","🎷","🎺","🎸","🎻","🎲","♟","��","🎳","🎮","🎰"],
+            travel: ["🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🦯","🦽","🦼","🛴","🚲","🛵","🏍","🛺","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃","🚋","🚞","🚝","🚄","🚅","🚈","🚂","🚆","🚇","🚊","🚉","✈️","🛫","🛬","🛩","💺","🛰","🚀","🛸","🚁","🛶","⛵","🚤","🛥","🛳","⛴","🚢","⚓","🪝","⛽","🚧","🚦","🚥","🚏","🗺","🗿","🗽","🗼","🏰","🏯","🏟","🎡","🎢","🎠","⛲","⛱","🏖","🏝","🏜","🌋","⛰","🏔","🗻","🏕","⛺","🏠","🏡","🏘","🏚","🏗","🏭","🏢","🏬","🏣","🏤","🏥","🏦","🏨","🏩","🏪","🏫","🏩","💒","🏛","⛪","🕌","🛕","🕍","🕋","⛩","🛤","🛣","🗾","🎑","🏞","🌅","🌄","🌠","🎇","🎆","🌇","🌆","🏙","��","🌌","🌉","🌁"],
+            symbols: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☪️","🕉","☸️","✡️","🔯","🕎","☯️","☦️","🛐","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓","🆔","⚛️","🉑","☢️","☣️","📴","📳","🈶","🈚","🈸","🈺","🈷️","✴️","🆚","💮","🉐","㊙️","㊗️","🈴","🈵","🈹","🈲","🅰️","🅱️","🆎","🆑","🅾️","🆘","❌","⭕","🛑","⛔","📛","🚫","💯","💢","♨️","🚷","🚯","🚳","🚱","🔞","📵","🚭","❗","❓","‼️","⁉️","🔅","🔆","〽️","⚠️","🚸","🔱","⚜️","🔰","♻️","✅","🈯","💹","❇️","✳️","❎","🌐","💠","Ⓜ️","🌀","💤","🏧","🚾","♿","🅿️","🛗","🚹","🚺","🚼","🚻","🚮","🎦","📶","🈁","🔣","ℹ️","🔤","🔡","🔠","🆖","🆗","🆙","🆒","🆓","��","🆚","🈁","🈂️"]
+        };
+        const emojiBtn = document.getElementById('emojiBtn');
+        const emojiPanel = document.getElementById('emojiPanel');
+        const emojiList = document.getElementById('emojiList');
+        const emojiCategories = document.getElementById('emojiCategories');
+        const messageInput = document.getElementById('messageInput');
+        let currentCat = 'smileys';
+        function renderEmojiList(cat) {
+            emojiList.innerHTML = '';
+            emojiData[cat].forEach(e => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-light btn-sm m-1';
+                btn.textContent = e;
+                btn.style.fontSize = '1.4em';
+                btn.onclick = function() {
+                    // Вставка эмодзи в текущее место курсора
+                    const start = messageInput.selectionStart;
+                    const end = messageInput.selectionEnd;
+                    const value = messageInput.value;
+                    messageInput.value = value.substring(0, start) + e + value.substring(end);
+                    messageInput.focus();
+                    messageInput.selectionStart = messageInput.selectionEnd = start + e.length;
+                    emojiPanel.style.display = 'none';
+                };
+                emojiList.appendChild(btn);
+            });
+        }
+        if (emojiBtn && emojiPanel && emojiList && emojiCategories) {
+            emojiBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (emojiPanel.style.display === 'none') {
+                    renderEmojiList(currentCat);
+                    emojiPanel.style.display = 'block';
+                } else {
+                    emojiPanel.style.display = 'none';
+                }
+            });
+            emojiCategories.querySelectorAll('.emoji-cat-btn').forEach(btn => {
+                btn.onclick = function() {
+                    emojiCategories.querySelectorAll('.emoji-cat-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCat = btn.getAttribute('data-cat');
+                    renderEmojiList(currentCat);
+                };
+            });
+            // Закрытие панели при клике вне
+            document.addEventListener('mousedown', function(e) {
+                if (emojiPanel.style.display === 'block' && !emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+                    emojiPanel.style.display = 'none';
+                }
+            });
+        }
     </script>
 } 
