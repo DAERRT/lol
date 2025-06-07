@@ -45,7 +45,10 @@
                     <div class="fw-bold small">@msg.User.FirstName @msg.User.LastName</div>
                     <div class="d-flex align-items-center">
                         <div class="message-text flex-grow-1">@msg.Text</div>
-                        <span class="message-status"></span>
+                        @if (msg.UserId == ViewBag.UserId)
+                        {
+                            <span class="message-status"></span>
+                        }
                         <button class="btn btn-link btn-sm reply-btn ms-2 px-1 py-0" title="Ответить" data-message-id="@msg.Id" data-message-text="@msg.Text" data-message-author="@msg.User.FirstName @msg.User.LastName"><i class="bi bi-reply"></i></button>
                     </div>
                     @if (msg.Attachments != null && msg.Attachments.Any())
@@ -1016,44 +1019,140 @@
         }
 
         // --- Реалтайм отчёт о прочтении ---
+        let lastScrollTime = 0;
+        const SCROLL_THROTTLE = 500; // 500мс между проверками
+        let pendingReadMessages = new Set(); // Для отслеживания сообщений в процессе прочтения
+
         function markVisibleMessagesAsRead() {
+            const now = Date.now();
+            if (now - lastScrollTime < SCROLL_THROTTLE) return;
+            lastScrollTime = now;
+
+            const visibleMessages = [];
             $(".message-bubble").each(function() {
                 const msgId = $(this).data("message-id");
                 const isMine = $(this).hasClass("my-message");
-                if (!isMine && isElementInViewport(this)) {
-                    $.post("/Chat/MarkAsRead", { messageId: msgId });
-                    connection.invoke("NotifyMessageRead", chatId, msgId, userId);
+                const $status = $(this).find(".message-status");
+                // Проверяем, не прочитано ли уже сообщение и не в процессе ли прочтения
+                if (!isMine && isElementInViewport(this) && 
+                    $status.find('.read-status').length === 0 && 
+                    !pendingReadMessages.has(msgId)) {
+                    visibleMessages.push(msgId);
+                    pendingReadMessages.add(msgId);
+                    console.log(`Добавлено сообщение ${msgId} в список для отметки прочтения`);
                 }
             });
+
+            if (visibleMessages.length > 0) {
+                console.log(`Отправка запроса на отметку прочтения для сообщений: ${visibleMessages.join(', ')}`);
+                $.ajax({
+                    url: "/Chat/MarkMultipleAsRead",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(visibleMessages),
+                    success: function() {
+                        console.log(`Успешно отмечены как прочитанные сообщения: ${visibleMessages.join(', ')}`);
+                        visibleMessages.forEach(msgId => {
+                            connection.invoke("NotifyMessageRead", chatId, msgId, userId);
+                            pendingReadMessages.delete(msgId);
+                        });
+                    },
+                    error: function(error) {
+                        console.error(`Ошибка при отметке прочтения: ${error.responseText}`);
+                        visibleMessages.forEach(msgId => pendingReadMessages.delete(msgId));
+                    }
+                });
+            }
         }
+
         function isElementInViewport(el) {
             const rect = el.getBoundingClientRect();
             return (
-                rect.top >= 0 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+                rect.top >= 0 && 
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
             );
         }
+
+        // Функция для обновления статуса прочтения одного сообщения
+        function updateSingleMessageStatus(messageId, isRead) {
+            console.log(`Обновление статуса сообщения ${messageId}: ${isRead ? 'прочитано' : 'не прочитано'}`);
+            if (isRead) {
+                const $status = $(`.message-bubble[data-message-id="${messageId}"] .message-status`);
+                if ($status.length > 0 && $status.find('.read-status').length === 0) {
+                    $status.html("<span class='read-status ms-1' title='Прочитано'><i class='bi bi-check2-all text-primary'></i></span>");
+                    readStatusCache.set(messageId, true);
+                    console.log(`Галочка прочтения добавлена для сообщения ${messageId}`);
+                }
+            }
+        }
+
         $(function() {
+            console.log('Инициализация системы прочтения сообщений');
+            // При загрузке страницы сразу запрашиваем статусы прочтения для всех сообщений
+            const allMessageIds = [];
+            $(".message-bubble").each(function() {
+                const msgId = $(this).data("message-id");
+                const isMine = $(this).hasClass("my-message");
+                if (isMine) {
+                    allMessageIds.push(msgId);
+                }
+            });
+            
+            if (allMessageIds.length > 0) {
+                console.log(`Запрос статусов прочтения для сообщений: ${allMessageIds.join(', ')}`);
+                $.get(`/Chat/GetMessagesReadStatus?messageIds=${allMessageIds.join(',')}`, function(data) {
+                    console.log('Получены статусы прочтения:', data);
+                    data.forEach(status => updateSingleMessageStatus(status.messageId, status.isRead));
+                }).fail(function(error) {
+                    console.error('Ошибка при получении статусов прочтения:', error);
+                });
+            }
+
             markVisibleMessagesAsRead();
             $("#messagesList").on("scroll", function() { markVisibleMessagesAsRead(); });
         });
+
         // --- Галочка "прочитано" ---
+        let readStatusCache = new Map();
+        let lastUpdateTime = 0;
+        const UPDATE_INTERVAL = 2000; // 2 секунды между обновлениями
+
         function updateReadStatus() {
+            const now = Date.now();
+            if (now - lastUpdateTime < UPDATE_INTERVAL) return;
+            lastUpdateTime = now;
+
+            const unreadMessages = [];
             $(".my-message").each(function() {
                 const msgId = $(this).data("message-id");
                 const $status = $(this).find(".message-status");
-                // Если уже есть галочка — не опрашиваем
-                if ($status.find('.read-status').length > 0) return;
-                $.get(`/Chat/IsMessageReadByAll?messageId=${msgId}`, function(data) {
-                    if (data.isRead) {
-                        $status.html("<span class='read-status ms-1' title='Прочитано'><i class='bi bi-check2-all text-primary'></i></span>");
-                    }
-                });
+                if ($status.find('.read-status').length === 0 && !readStatusCache.has(msgId)) {
+                    unreadMessages.push(msgId);
+                }
             });
+
+            if (unreadMessages.length > 0) {
+                console.log(`Периодическое обновление статусов для сообщений: ${unreadMessages.join(', ')}`);
+                $.get(`/Chat/GetMessagesReadStatus?messageIds=${unreadMessages.join(',')}`, function(data) {
+                    console.log('Получены статусы прочтения:', data);
+                    data.forEach(status => updateSingleMessageStatus(status.messageId, status.isRead));
+                }).fail(function(error) {
+                    console.error('Ошибка при получении статусов прочтения:', error);
+                });
+            }
         }
-        $(function() { updateReadStatus(); });
+
+        $(function() { 
+            updateReadStatus();
+            setInterval(updateReadStatus, UPDATE_INTERVAL);
+        });
+
         // --- SignalR: обновление статуса прочтения ---
         connection.on("MessageRead", function(msgChatId, msgId, readUserId) {
-            if (msgChatId == chatId) updateReadStatus();
+            console.log(`Получено событие прочтения: чат ${msgChatId}, сообщение ${msgId}, пользователь ${readUserId}`);
+            if (msgChatId == chatId) {
+                updateSingleMessageStatus(msgId, true);
+            }
         });
     </script>
 } 

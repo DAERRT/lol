@@ -256,5 +256,21 @@ namespace lol.Controllers
             var isRead = await _chatService.IsMessageReadByAll(messageId);
             return Json(new { isRead });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkMultipleAsRead([FromBody] int[] messageIds)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            await _chatService.MarkMessagesAsRead(messageIds, user.Id);
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetMessagesReadStatus(string messageIds)
+        {
+            var ids = messageIds.Split(',').Select(int.Parse).ToArray();
+            var statuses = await _chatService.GetMessagesReadStatus(ids);
+            return Json(statuses);
+        }
     }
 } 

@@ -227,5 +227,99 @@ namespace lol.Services
             var readUsers = await _context.MessageReads.Where(r => r.MessageId == messageId).Select(r => r.UserId).ToListAsync();
             return chatUsers.All(u => readUsers.Contains(u));
         }
+
+        // Отметить несколько сообщений как прочитанные
+        public async Task MarkMessagesAsRead(int[] messageIds, string userId)
+        {
+            try
+            {
+                // Получаем существующие записи о прочтении
+                var existingReads = await _context.MessageReads
+                    .Where(r => messageIds.Contains(r.MessageId) && r.UserId == userId)
+                    .Select(r => r.MessageId)
+                    .ToListAsync();
+
+                // Создаем новые записи только для непрочитанных сообщений
+                var newReads = messageIds
+                    .Where(id => !existingReads.Contains(id))
+                    .Select(id => new MessageRead 
+                    { 
+                        MessageId = id, 
+                        UserId = userId, 
+                        ReadAt = DateTime.UtcNow 
+                    });
+
+                if (newReads.Any())
+                {
+                    await _context.MessageReads.AddRangeAsync(newReads);
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Отмечено как прочитанное {newReads.Count()} сообщений пользователем {userId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при отметке сообщений как прочитанных: {ex.Message}");
+                throw;
+            }
+        }
+
+        // Получить статусы прочтения для нескольких сообщений
+        public async Task<List<MessageReadStatus>> GetMessagesReadStatus(int[] messageIds)
+        {
+            try
+            {
+                // Получаем все сообщения одним запросом
+                var messages = await _context.Messages
+                    .Include(m => m.Chat)
+                    .Where(m => messageIds.Contains(m.Id))
+                    .ToListAsync();
+
+                if (!messages.Any())
+                {
+                    Console.WriteLine("Сообщения не найдены");
+                    return new List<MessageReadStatus>();
+                }
+
+                // Получаем все чаты одним запросом
+                var chatIds = messages.Select(m => m.ChatId).Distinct().ToList();
+                var chatUsers = await _context.ChatUsers
+                    .Where(cu => chatIds.Contains(cu.ChatId))
+                    .GroupBy(cu => cu.ChatId)
+                    .ToDictionaryAsync(g => g.Key, g => g.Select(cu => cu.UserId).ToList());
+
+                // Получаем все записи о прочтении одним запросом
+                var readUsers = await _context.MessageReads
+                    .Where(r => messageIds.Contains(r.MessageId))
+                    .GroupBy(r => r.MessageId)
+                    .ToDictionaryAsync(g => g.Key, g => g.Select(r => r.UserId).ToList());
+
+                var result = new List<MessageReadStatus>();
+                foreach (var message in messages)
+                {
+                    var usersInChat = chatUsers.GetValueOrDefault(message.ChatId, new List<string>())
+                        .Where(u => u != message.UserId)
+                        .ToList();
+
+                    var usersWhoRead = readUsers.GetValueOrDefault(message.Id, new List<string>());
+
+                    var isRead = usersInChat.Any() && usersInChat.All(u => usersWhoRead.Contains(u));
+                    
+                    Console.WriteLine($"Сообщение {message.Id}: пользователей в чате {usersInChat.Count}, прочитали {usersWhoRead.Count}, статус прочтения: {isRead}");
+
+                    result.Add(new MessageReadStatus
+                    {
+                        MessageId = message.Id,
+                        IsRead = isRead
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при получении статусов прочтения: {ex.Message}");
+                throw;
+            }
+        }
     }
 } 
