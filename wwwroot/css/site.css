@@ -29,3 +29,91 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* --- Emoji Panel Telegram Style --- */
+#emojiPanel {
+  box-shadow: 0 4px 24px #0002, 0 1.5px 8px #0001;
+  border-radius: 18px;
+  padding: 12px 10px 8px 10px !important;
+  min-width: 340px;
+  background: #fff;
+}
+#emojiCategories {
+  margin-bottom: 8px;
+  gap: 4px !important;
+}
+.emoji-cat-btn {
+  font-size: 1.5em !important;
+  border-radius: 10px !important;
+  padding: 2px 8px !important;
+  transition: background 0.15s;
+}
+.emoji-cat-btn.active, .emoji-cat-btn:hover {
+  background: #e6eaff !important;
+}
+#emojiList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+#emojiList button {
+  all: unset;
+  font-size: 2.1em;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  margin: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.13s, transform 0.13s;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  background: none !important;
+}
+#emojiList button:hover, #emojiList button:focus {
+  background: #e6eaff !important;
+  transform: scale(1.13);
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
+#emojiPanel button,
+#emojiList button,
+.emoji-cat-btn,
+.emoji-btn-telegram {
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.emoji-btn-telegram,
+#emojiList button {
+  border: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+.emoji-btn-telegram:focus, .emoji-btn-telegram:active,
+#emojiList button:focus, #emojiList button:active {
+  border: none !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: #e6eaff !important;
+}

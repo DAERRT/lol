@@ -22,6 +22,7 @@ namespace lol.Data
         public DbSet<ExpertReview> ExpertReviews { get; set; }
         public DbSet<ProjectExchange> ProjectExchanges { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
+        public DbSet<MessageRead> MessageReads { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -77,6 +78,13 @@ namespace lol.Data
                 .HasMany(pe => pe.Projects)
                 .WithMany(p => p.ProjectExchanges)
                 .UsingEntity(j => j.ToTable("ProjectExchangeProjects"));
+
+            // Настройка связи MessageRead -> Message без каскадного удаления
+            builder.Entity<MessageRead>()
+                .HasOne(mr => mr.Message)
+                .WithMany(m => m.Reads)
+                .HasForeignKey(mr => mr.MessageId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Устанавливаем стоковую аватарку для всех пользователей, у кого она не задана
             builder.Entity<ApplicationUser>().Property(u => u.AvatarPath).HasDefaultValue("/images/avatars/default.png");

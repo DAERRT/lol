@@ -233,5 +233,28 @@ namespace lol.Controllers
 
             return Json(new { success = true, avatarPath = $"/images/avatars/{fileName}" });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkAsRead(int messageId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            await _chatService.MarkMessageAsRead(messageId, user.Id);
+            return Ok();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUnreadCount(int chatId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var count = await _chatService.GetUnreadCountForUser(chatId, user.Id);
+            return Json(new { count });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> IsMessageReadByAll(int messageId)
+        {
+            var isRead = await _chatService.IsMessageReadByAll(messageId);
+            return Json(new { isRead });
+        }
     }
 } 

@@ -171,5 +171,23 @@ else
                 window.location.href = data.redirectUrl || data;
             });
         });
+        $(function() {
+            $(".chat-list-item").each(function() {
+                const chatId = $(this).attr("href").split("chatId=")[1];
+                const $item = $(this);
+                $.get(`/Chat/GetUnreadCount?chatId=${chatId}`, function(data) {
+                    if (data.count > 0) {
+                        let badge = $item.find('.unread-badge');
+                        if (badge.length === 0) {
+                            badge = $("<span class='badge bg-danger unread-badge ms-2'></span>");
+                            $item.find('.text-end').append(badge);
+                        }
+                        badge.text(data.count).show();
+                    } else {
+                        $item.find('.unread-badge').hide();
+                    }
+                });
+            });
+        });
     </script>
 } 

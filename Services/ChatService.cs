@@ -198,5 +198,34 @@ namespace lol.Services
         {
             return await _context.Chats.FirstOrDefaultAsync(c => c.Id == chatId);
         }
+
+        // Отметить сообщение как прочитанное
+        public async Task MarkMessageAsRead(int messageId, string userId)
+        {
+            var alreadyRead = await _context.MessageReads.AnyAsync(r => r.MessageId == messageId && r.UserId == userId);
+            if (!alreadyRead)
+            {
+                _context.MessageReads.Add(new MessageRead { MessageId = messageId, UserId = userId, ReadAt = DateTime.UtcNow });
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        // Получить количество непрочитанных сообщений в чате для пользователя
+        public async Task<int> GetUnreadCountForUser(int chatId, string userId)
+        {
+            return await _context.Messages
+                .Where(m => m.ChatId == chatId && m.UserId != userId)
+                .CountAsync(m => !_context.MessageReads.Any(r => r.MessageId == m.Id && r.UserId == userId));
+        }
+
+        // Прочитано ли сообщение всеми кроме отправителя
+        public async Task<bool> IsMessageReadByAll(int messageId)
+        {
+            var message = await _context.Messages.Include(m => m.Chat).FirstOrDefaultAsync(m => m.Id == messageId);
+            if (message == null) return false;
+            var chatUsers = await _context.ChatUsers.Where(cu => cu.ChatId == message.ChatId && cu.UserId != message.UserId).Select(cu => cu.UserId).ToListAsync();
+            var readUsers = await _context.MessageReads.Where(r => r.MessageId == messageId).Select(r => r.UserId).ToListAsync();
+            return chatUsers.All(u => readUsers.Contains(u));
+        }
     }
 } 

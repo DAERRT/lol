@@ -22,5 +22,11 @@ namespace lol.Hubs
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"chat_{chatId}");
         }
+
+        // Уведомление о прочтении сообщения
+        public async Task NotifyMessageRead(int chatId, int messageId, string userId)
+        {
+            await Clients.Group($"chat_{chatId}").SendAsync("MessageRead", chatId, messageId, userId);
+        }
     }
 } 

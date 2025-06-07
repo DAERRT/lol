@@ -25,5 +25,6 @@ namespace lol.Models
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<MessageAttachment> Attachments { get; set; } = new List<MessageAttachment>();
+        public ICollection<MessageRead> Reads { get; set; } = new List<MessageRead>();
     }
 } 
