@@ -447,7 +447,19 @@
                     <input type="file" id="groupAvatarInput" name="avatar" accept="image/*" style="display:none;" />
                 </form>
             </div>
-            <h4 class="fw-bold mb-1" id="groupChatTitle">@ViewBag.ChatTitle ?? "Групповой чат"</h4>
+            <div class="d-flex align-items-center justify-content-center mb-1">
+                <h4 class="fw-bold mb-0" id="groupChatTitle">@ViewBag.ChatTitle ?? "Групповой чат"</h4>
+                <form id="renameGroupChatForm" class="mb-0 ms-2" style="display:none;max-width:220px;">
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="newGroupName" class="form-control" placeholder="Новое название" maxlength="100" required>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <button type="button" class="btn btn-secondary" id="cancelRenameBtn">Отмена</button>
+                    </div>
+                </form>
+                <span id="editGroupNameBtn" style="cursor:pointer; margin-left:8px;" title="Переименовать чат">
+                    <i class="bi bi-pencil"></i>
+                </span>
+            </div>
             <div class="mt-2 mb-3">
                 <div class="small text-muted" id="chatParticipants">Участники: ...</div>
             </div>
@@ -1039,26 +1051,26 @@
                     !pendingReadMessages.has(msgId)) {
                     visibleMessages.push(msgId);
                     pendingReadMessages.add(msgId);
-                    console.log(`Добавлено сообщение ${msgId} в список для отметки прочтения`);
+                    // console.log(`Добавлено сообщение ${msgId} в список для отметки прочтения`);
                 }
             });
 
             if (visibleMessages.length > 0) {
-                console.log(`Отправка запроса на отметку прочтения для сообщений: ${visibleMessages.join(', ')}`);
                 $.ajax({
                     url: "/Chat/MarkMultipleAsRead",
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(visibleMessages),
                     success: function() {
-                        console.log(`Успешно отмечены как прочитанные сообщения: ${visibleMessages.join(', ')}`);
                         visibleMessages.forEach(msgId => {
                             connection.invoke("NotifyMessageRead", chatId, msgId, userId);
                             pendingReadMessages.delete(msgId);
                         });
+                        // Мгновенно скрываем badge для текущего чата
+                        const $item = $(`.chat-list-item[href*='chatId=${chatId}']`);
+                        $item.find('.unread-badge').hide();
                     },
                     error: function(error) {
-                        console.error(`Ошибка при отметке прочтения: ${error.responseText}`);
                         visibleMessages.forEach(msgId => pendingReadMessages.delete(msgId));
                     }
                 });
@@ -1075,19 +1087,19 @@
 
         // Функция для обновления статуса прочтения одного сообщения
         function updateSingleMessageStatus(messageId, isRead) {
-            console.log(`Обновление статуса сообщения ${messageId}: ${isRead ? 'прочитано' : 'не прочитано'}`);
+            // console.log(`Обновление статуса сообщения ${messageId}: ${isRead ? 'прочитано' : 'не прочитано'}`);
             if (isRead) {
                 const $status = $(`.message-bubble[data-message-id="${messageId}"] .message-status`);
                 if ($status.length > 0 && $status.find('.read-status').length === 0) {
                     $status.html("<span class='read-status ms-1' title='Прочитано'><i class='bi bi-check2-all text-primary'></i></span>");
                     readStatusCache.set(messageId, true);
-                    console.log(`Галочка прочтения добавлена для сообщения ${messageId}`);
+                    // console.log(`Галочка прочтения добавлена для сообщения ${messageId}`);
                 }
             }
         }
 
         $(function() {
-            console.log('Инициализация системы прочтения сообщений');
+            // console.log('Инициализация системы прочтения сообщений');
             // При загрузке страницы сразу запрашиваем статусы прочтения для всех сообщений
             const allMessageIds = [];
             $(".message-bubble").each(function() {
@@ -1099,12 +1111,12 @@
             });
             
             if (allMessageIds.length > 0) {
-                console.log(`Запрос статусов прочтения для сообщений: ${allMessageIds.join(', ')}`);
+                // console.log(`Запрос статусов прочтения для сообщений: ${allMessageIds.join(',')}`);
                 $.get(`/Chat/GetMessagesReadStatus?messageIds=${allMessageIds.join(',')}`, function(data) {
-                    console.log('Получены статусы прочтения:', data);
+                    // console.log('Получены статусы прочтения:', data);
                     data.forEach(status => updateSingleMessageStatus(status.messageId, status.isRead));
                 }).fail(function(error) {
-                    console.error('Ошибка при получении статусов прочтения:', error);
+                    // console.error('Ошибка при получении статусов прочтения:', error);
                 });
             }
 
@@ -1132,12 +1144,12 @@
             });
 
             if (unreadMessages.length > 0) {
-                console.log(`Периодическое обновление статусов для сообщений: ${unreadMessages.join(', ')}`);
+                // console.log(`Периодическое обновление статусов для сообщений: ${unreadMessages.join(', ')}`);
                 $.get(`/Chat/GetMessagesReadStatus?messageIds=${unreadMessages.join(',')}`, function(data) {
-                    console.log('Получены статусы прочтения:', data);
+                    // console.log('Получены статусы прочтения:', data);
                     data.forEach(status => updateSingleMessageStatus(status.messageId, status.isRead));
                 }).fail(function(error) {
-                    console.error('Ошибка при получении статусов прочтения:', error);
+                    // console.error('Ошибка при получении статусов прочтения:', error);
                 });
             }
         }
@@ -1149,10 +1161,37 @@
 
         // --- SignalR: обновление статуса прочтения ---
         connection.on("MessageRead", function(msgChatId, msgId, readUserId) {
-            console.log(`Получено событие прочтения: чат ${msgChatId}, сообщение ${msgId}, пользователь ${readUserId}`);
+            // console.log(`Получено событие прочтения: чат ${msgChatId}, сообщение ${msgId}, пользователь ${readUserId}`);
             if (msgChatId == chatId) {
                 updateSingleMessageStatus(msgId, true);
             }
+        });
+
+        // Открыть форму переименования
+        $('#editGroupNameBtn').on('click', function() {
+            $('#renameGroupChatForm').show();
+            $('#newGroupName').val($('#groupChatTitle').text()).focus();
+            $(this).hide();
+        });
+        // Отмена
+        $('#cancelRenameBtn').on('click', function() {
+            $('#renameGroupChatForm').hide();
+            $('#editGroupNameBtn').show();
+        });
+        // Сохранить новое имя
+        $('#renameGroupChatForm').on('submit', function(e) {
+            e.preventDefault();
+            var newName = $('#newGroupName').val().trim();
+            if (!newName) return;
+            $.post('/Chat/RenameGroup', { chatId: chatId, newName: newName }, function(data) {
+                if (data.success) {
+                    $('#groupChatTitle').text(newName);
+                    $('#renameGroupChatForm').hide();
+                    $('#editGroupNameBtn').show();
+                } else {
+                    alert(data.error || 'Ошибка при переименовании!');
+                }
+            });
         });
     </script>
 } 

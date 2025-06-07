@@ -83,6 +83,8 @@ namespace lol.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             await _chatService.SendMessageAsync(chatId, user.Id, text, replyToMessageId);
+            // Обновляем badge у всех участников чата
+            await _hubContext.Clients.All.SendAsync("NotifyUnreadCountChanged", chatId);
             return Ok();
         }
 
@@ -262,6 +264,16 @@ namespace lol.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             await _chatService.MarkMessagesAsRead(messageIds, user.Id);
+            // Обновляем badge у всех участников чата (берём chatId первого сообщения)
+            if (messageIds.Length > 0)
+            {
+                var firstMsg = await _chatService.GetChatMessagesAsync(messageIds[0]);
+                if (firstMsg != null && firstMsg.Count > 0)
+                {
+                    int chatId = firstMsg[0].ChatId;
+                    await _hubContext.Clients.All.SendAsync("NotifyUnreadCountChanged", chatId);
+                }
+            }
             return Ok();
         }
 
@@ -271,6 +283,13 @@ namespace lol.Controllers
             var ids = messageIds.Split(',').Select(int.Parse).ToArray();
             var statuses = await _chatService.GetMessagesReadStatus(ids);
             return Json(statuses);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RenameGroup(int chatId, string newName)
+        {
+            await _chatService.RenameGroupChatAsync(chatId, newName);
+            return Json(new { success = true });
         }
     }
 } 

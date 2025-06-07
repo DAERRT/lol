@@ -129,6 +129,7 @@ else
             const userId = $('#privateUserId').val();
             if (!userId) return;
             $.post('/Chat/CreatePrivate', { userId: userId }, function(data) {
+                reloadChatListSidebar();
                 window.location.href = data.redirectUrl || data;
             });
         });
@@ -168,26 +169,65 @@ else
             const name = $('#groupName').val();
             if (!name || groupUsers.length === 0) return;
             $.post('/Chat/CreateGroup', { name: name, userIds: groupUsers }, function(data) {
+                reloadChatListSidebar();
                 window.location.href = data.redirectUrl || data;
             });
         });
-        $(function() {
-            $(".chat-list-item").each(function() {
-                const chatId = $(this).attr("href").split("chatId=")[1];
+        // --- Функция массового обновления badge ---
+        function updateAllUnreadBadges() {
+            console.log('Вызвана updateAllUnreadBadges');
+            var $items = $(".chat-list-item");
+            console.log('Найдено чатов:', $items.length);
+            $items.each(function() {
+                const chatId = $(this).attr("href") ? $(this).attr("href").split("chatId=")[1] : null;
                 const $item = $(this);
+                if (!chatId) {
+                    console.log('Не удалось получить chatId для элемента', this);
+                    return;
+                }
+                console.log('Запрашиваю непрочитанные для чата', chatId);
                 $.get(`/Chat/GetUnreadCount?chatId=${chatId}`, function(data) {
+                    let badge = $item.find('.unread-badge');
                     if (data.count > 0) {
-                        let badge = $item.find('.unread-badge');
                         if (badge.length === 0) {
                             badge = $("<span class='badge bg-danger unread-badge ms-2'></span>");
                             $item.find('.text-end').append(badge);
                         }
                         badge.text(data.count).show();
+                        console.log('Показан badge для чата', chatId, 'count:', data.count);
                     } else {
-                        $item.find('.unread-badge').hide();
+                        badge.hide();
+                        console.log('Скрыт badge для чата', chatId);
                     }
                 });
             });
+        }
+        // --- SignalR: обновление badge в реальном времени ---
+        if (window.connection) {
+            connection.on("UpdateUnreadCount", function(chatId, count) {
+                const $item = $(`.chat-list-item[href*="chatId=${chatId}"]`);
+                let badge = $item.find('.unread-badge');
+                if (count > 0) {
+                    if (badge.length === 0) {
+                        badge = $("<span class='badge bg-danger unread-badge ms-2'></span>");
+                        $item.find('.text-end').append(badge);
+                    }
+                    badge.text(count).show();
+                } else {
+                    badge.hide();
+                }
+            });
+        }
+        // --- Обновление списка чатов после создания нового чата ---
+        function reloadChatListSidebar() {
+            $.get('/Chat/ChatListPartial', function(html) {
+                $('.chat-list').parent().html(html);
+                setTimeout(updateAllUnreadBadges, 100); // Даем DOM обновиться
+            });
+        }
+        // --- Первичная инициализация badge ---
+        $(document).ready(function() {
+            setTimeout(updateAllUnreadBadges, 100);
         });
     </script>
 } 

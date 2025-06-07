@@ -321,5 +321,15 @@ namespace lol.Services
                 throw;
             }
         }
+
+        public async Task RenameGroupChatAsync(int chatId, string newName)
+        {
+            var chat = await _context.Chats.FirstOrDefaultAsync(c => c.Id == chatId && c.IsGroup);
+            if (chat != null)
+            {
+                chat.Name = newName;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 } 
