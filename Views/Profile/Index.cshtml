@@ -94,7 +94,38 @@
         <div class="alert alert-info">У вас нет проектов в роли заказчика.</div>
     }
 }
+<h4>Заявка на роль "Заказчик"</h4>
+@if (ViewBag.CompanyCard != null)
+{
+    var card = (lol.Models.CompanyCard)ViewBag.CompanyCard;
+    <div class="card mb-3">
+        <div class="card-header">Карточка компании</div>
+        <div class="card-body">
+            <h5 class="card-title">@card.CompanyName</h5>
+            <p class="card-text">Статус: @card.Status.GetDisplayName()</p>
+            <p class="card-text">Дата создания: @card.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+            <p class="card-text">Дата обновления: @card.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+            @if (!string.IsNullOrEmpty(card.ModeratorComment))
+            {
+                <p class="card-text text-danger">Комментарий модератора: @card.ModeratorComment</p>
+            }
+            <a asp-controller="CompanyCard" asp-action="Index" class="btn btn-sm btn-info">Посмотреть детали</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">У вас нет активной заявки на роль "Заказчик".</div>
+    @if (ViewBag.UserRoles != null && ViewBag.UserRoles.Contains("Новый пользователь"))
+    {
+        <a asp-controller="CompanyCard" asp-action="Create" class="btn btn-primary mb-3">Подать заявку на роль "Заказчик"</a>
+    }
+    else
+    {
+        <div class="alert alert-warning">Подача заявки на роль "Заказчик" доступна только пользователям с ролью "Новый пользователь".</div>
+    }
+}
 <a asp-action="Edit" class="btn btn-primary">Редактировать</a>
 <form asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт?');">
     <button type="submit" class="btn btn-danger">Удалить аккаунт</button>
-</form> 
+</form>

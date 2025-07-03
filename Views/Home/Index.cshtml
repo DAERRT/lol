@@ -2,7 +2,146 @@
     ViewData["Title"] = "Главная";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Добро пожаловать</h1>
-    <p>Это минимальное ASP.NET Core MVC приложение.</p>
-</div> 
+<div class="text-center mb-5">
+    <h1 class="display-4">Добро пожаловать на Портал ВШЦТ</h1>
+    <p>Платформа для совместной работы над проектами и обмена знаниями.</p>
+</div>
+
+<div class="container">
+    <h2 class="text-center mb-4">Аналитика платформы</h2>
+    
+    <!-- Cards Section -->
+    <div class="row row-cols-1 row-cols-md-4 g-4 mb-5">
+        <div class="col">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-people-fill text-primary" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title mt-2" id="userCount">0</h3>
+                    <p class="card-text">Зарегистрировано пользователей</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-briefcase-fill text-success" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title mt-2" id="projectCount">0</h3>
+                    <p class="card-text">Активных проектов</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-person-lines-fill text-warning" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title mt-2" id="teamCount">0</h3>
+                    <p class="card-text">Команд</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-clock-fill text-danger" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title mt-2" id="activityCount">0</h3>
+                    <p class="card-text">Новых активностей за неделю</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="row row-cols-1 row-cols-lg-2 g-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header text-center">Рост пользователей (последние 30 дней)</div>
+                <div class="card-body">
+                    <canvas id="userGrowthChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header text-center">Активность проектов (последние 6 месяцев)</div>
+                <div class="card-body">
+                    <canvas id="projectActivityChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Data from controller
+        var userGrowthData = @Html.Raw(Json.Serialize(ViewBag.UserGrowthData ?? new List<int>(new int[30])));
+        var projectActivityData = @Html.Raw(Json.Serialize(ViewBag.ProjectActivityData ?? new List<int>(new int[6])));
+        
+        // Function to initialize charts
+        function initCharts() {
+            // User Growth Chart
+            new Chart(document.getElementById('userGrowthChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 30}, (_, i) => `День ${i+1}`),
+                    datasets: [{
+                        label: 'Новые пользователи',
+                        data: userGrowthData,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Project Activity Chart
+            new Chart(document.getElementById('projectActivityChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                    datasets: [{
+                        label: 'Новые проекты',
+                        data: projectActivityData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update card values with data from controller
+        function updateCards(userCount, projectCount, teamCount, activityCount) {
+            document.getElementById('userCount').textContent = userCount;
+            document.getElementById('projectCount').textContent = projectCount;
+            document.getElementById('teamCount').textContent = teamCount;
+            document.getElementById('activityCount').textContent = activityCount;
+        }
+        
+        // Initialize charts on page load
+        window.onload = function() {
+            initCharts();
+            updateCards(@(ViewBag.UserCount ?? 0), @(ViewBag.ProjectCount ?? 0), @(ViewBag.TeamCount ?? 0), @(ViewBag.ActivityCount ?? 0));
+        };
+    </script>
+}

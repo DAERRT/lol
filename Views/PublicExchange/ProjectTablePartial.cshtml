@@ -27,7 +27,10 @@ else
                 <td>@project.Customer</td>
                 <td>@project.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
                 <td>
-                    @if (project.Status == lol.Models.ProjectStatus.Published && isActive && User.IsInRole("Тимлид"))
+                    @{
+                        bool isTeamLeader = ViewBag.IsTeamLeader as bool? ?? false;
+                    }
+                    @if (project.Status == lol.Models.ProjectStatus.Published && isActive && isTeamLeader)
                     {
                         <a asp-controller="ProjectApplication" asp-action="Create" asp-route-projectId="@project.Id" class="btn btn-primary btn-sm">Подать заявку</a>
                     }
@@ -40,4 +43,4 @@ else
         }
         </tbody>
     </table>
-} 
+}

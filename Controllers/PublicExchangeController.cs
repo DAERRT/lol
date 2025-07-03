@@ -56,6 +56,27 @@ namespace lol.Controllers
             ViewBag.StatusList = System.Enum.GetValues(typeof(ProjectStatus)).Cast<ProjectStatus>().ToList();
             ViewBag.CustomerList = exchange.Projects.Select(p => p.Customer).Distinct().ToList();
             exchange.Projects = projects.ToList();
+
+            // Проверяем, является ли пользователь тимлидом или создателем команды
+            if (User.Identity.IsAuthenticated)
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var isTeamLeader = await _context.Teams
+                        .AnyAsync(t => t.LeaderId == userId || t.CreatorId == userId);
+                    ViewBag.IsTeamLeader = isTeamLeader;
+                }
+                else
+                {
+                    ViewBag.IsTeamLeader = false;
+                }
+            }
+            else
+            {
+                ViewBag.IsTeamLeader = false;
+            }
+
             return View(exchange);
         }
 
@@ -74,6 +95,27 @@ namespace lol.Controllers
             if (!string.IsNullOrWhiteSpace(projectCustomer))
                 projects = projects.Where(p => p.Customer.Contains(projectCustomer));
             ViewBag.IsActive = exchange.IsActive;
+
+            // Проверяем, является ли пользователь тимлидом или создателем команды
+            if (User.Identity.IsAuthenticated)
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var isTeamLeader = await _context.Teams
+                        .AnyAsync(t => t.LeaderId == userId || t.CreatorId == userId);
+                    ViewBag.IsTeamLeader = isTeamLeader;
+                }
+                else
+                {
+                    ViewBag.IsTeamLeader = false;
+                }
+            }
+            else
+            {
+                ViewBag.IsTeamLeader = false;
+            }
+
             return PartialView("~/Views/PublicExchange/ProjectTablePartial.cshtml", projects.ToList());
         }
 
@@ -91,4 +133,4 @@ namespace lol.Controllers
             return PartialView("~/Views/PublicExchange/ExchangeTablePartial.cshtml", await exchanges.ToListAsync());
         }
     }
-} 
+}

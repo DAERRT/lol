@@ -52,6 +52,11 @@ namespace lol.Controllers
                 .ToListAsync();
             ViewBag.Projects = projects;
 
+            // Получаем карточку компании пользователя, если она существует
+            var companyCard = await _context.CompanyCards
+                .FirstOrDefaultAsync(cc => cc.UserId == user.Id);
+            ViewBag.CompanyCard = companyCard;
+
             ViewBag.Teams = teams;
             ViewBag.UserRoles = await _userManager.GetRolesAsync(user);
             return View(user);
@@ -119,4 +124,4 @@ namespace lol.Controllers
             return RedirectToAction("Edit");
         }
     }
-} 
+}

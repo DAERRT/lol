@@ -352,5 +352,68 @@ namespace lol.Controllers
             ViewBag.IsActive = isActive;
             return View(await exchanges.ToListAsync());
         }
+
+        // Управление заявками на роль "Заказчик"
+        public async Task<IActionResult> CompanyCards(string searchString, string statusFilter)
+        {
+            var companyCards = _context.CompanyCards.Include(cc => cc.User).AsQueryable();
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                companyCards = companyCards.Where(cc => cc.CompanyName.Contains(searchString) || cc.User.Email.Contains(searchString));
+            }
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                if (Enum.TryParse<CompanyCardStatus>(statusFilter, out var statusEnum))
+                {
+                    companyCards = companyCards.Where(cc => cc.Status == statusEnum);
+                }
+            }
+            ViewBag.Statuses = Enum.GetNames(typeof(CompanyCardStatus));
+            ViewData["StatusFilter"] = statusFilter;
+            ViewData["searchString"] = searchString;
+            return View(await companyCards.ToListAsync());
+        }
+
+        // Обновление статуса заявки на роль "Заказчик"
+        [HttpPost]
+        public async Task<IActionResult> UpdateCompanyCardStatus(int companyCardId, CompanyCardStatus newStatus, string moderatorComment)
+        {
+            var companyCard = await _context.CompanyCards.Include(cc => cc.User).FirstOrDefaultAsync(cc => cc.Id == companyCardId);
+            if (companyCard == null)
+            {
+                return NotFound();
+            }
+            companyCard.Status = newStatus;
+            companyCard.UpdatedAt = DateTime.UtcNow;
+            if (moderatorComment != string.Empty && moderatorComment != null)
+            {
+                companyCard.ModeratorComment = moderatorComment;
+            }
+            else
+            {
+                companyCard.ModeratorComment = "-";
+            }
+            
+            await _context.SaveChangesAsync();
+
+            // Уведомление пользователю о результате модерации
+            string notifyMessage = newStatus == CompanyCardStatus.Approved 
+                ? $"Ваша заявка на роль 'Заказчик' одобрена." 
+                : $"Ваша заявка на роль 'Заказчик' отклонена. Комментарий модератора: {moderatorComment}";
+            await _notificationService.CreateAsync(companyCard.UserId, notifyMessage);
+
+            // Если заявка одобрена, присваиваем роль "Заказчик"
+            if (newStatus == CompanyCardStatus.Approved)
+            {
+                var user = await _userManager.FindByIdAsync(companyCard.UserId);
+                if (user != null)
+                {
+                    await _userManager.RemoveFromRolesAsync(user, new List<string> { "Новый пользователь" });
+                    await _userManager.AddToRoleAsync(user, "Заказчик");
+                }
+            }
+
+            return RedirectToAction(nameof(CompanyCards));
+        }
     }
-} 
+}

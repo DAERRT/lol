@@ -1,0 +1,210 @@
+@model lol.Models.KanbanTask
+@{
+    ViewData["Title"] = "Канбан-доска";
+    var project = ViewBag.Project as lol.Models.Project;
+    var team = ViewBag.Team as lol.Models.Team;
+    var tasks = ViewBag.Tasks as List<lol.Models.KanbanTask>;
+    var teamMembers = ViewBag.TeamMembers as List<lol.Models.ApplicationUser>;
+}
+
+<h1>Канбан-доска</h1>
+<h3>Проект: @project.IdeaName | Команда: @team.Name</h3>
+
+<div class="row mb-3">
+    <div class="col-md-9">
+        <div class="row">
+            <div class="col-md-4">
+                <h4>К выполнению</h4>
+                <div id="todo" class="kanban-column" data-status="ToDo">
+                    @foreach (var task in tasks.Where(t => t.Status == KanbanTaskStatus.ToDo))
+                    {
+                        <div class="card mb-2" data-id="@task.Id">
+                            <div class="card-body">
+                                <h5 class="card-title">@task.Title</h5>
+                                <p class="card-text">@(string.IsNullOrEmpty(task.Description) ? "Без описания" : task.Description.Substring(0, Math.Min(task.Description.Length, 100)) + (task.Description.Length > 100 ? "..." : ""))</p>
+                                <p class="card-text"><small class="text-muted">Приоритет: @task.Priority.GetDisplayName()</small></p>
+                                <p class="card-text"><small class="text-muted">Дедлайн: @(task.Deadline.HasValue ? task.Deadline.Value.ToString("dd.MM.yyyy") : "Не указан")</small></p>
+                                <p class="card-text"><small class="text-muted">Создано: @(task.CreatedBy != null ? task.CreatedBy.UserName : "Неизвестно")</small></p>
+                                <p class="card-text"><small class="text-muted">Назначено: @(task.AssignedTo != null ? task.AssignedTo.UserName : "Не назначено")</small></p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h4>В процессе</h4>
+                <div id="inProgress" class="kanban-column" data-status="InProgress">
+                    @foreach (var task in tasks.Where(t => t.Status == KanbanTaskStatus.InProgress))
+                    {
+                        <div class="card mb-2" data-id="@task.Id">
+                            <div class="card-body">
+                                <h5 class="card-title">@task.Title</h5>
+                                <p class="card-text">@(string.IsNullOrEmpty(task.Description) ? "Без описания" : task.Description.Substring(0, Math.Min(task.Description.Length, 100)) + (task.Description.Length > 100 ? "..." : ""))</p>
+                                <p class="card-text"><small class="text-muted">Приоритет: @task.Priority.GetDisplayName()</small></p>
+                                <p class="card-text"><small class="text-muted">Дедлайн: @(task.Deadline.HasValue ? task.Deadline.Value.ToString("dd.MM.yyyy") : "Не указан")</small></p>
+                                <p class="card-text"><small class="text-muted">Создано: @(task.CreatedBy != null ? task.CreatedBy.UserName : "Неизвестно")</small></p>
+                                <p class="card-text"><small class="text-muted">Назначено: @(task.AssignedTo != null ? task.AssignedTo.UserName : "Не назначено")</small></p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h4>Выполнено</h4>
+                <div id="done" class="kanban-column" data-status="Done">
+                    @foreach (var task in tasks.Where(t => t.Status == KanbanTaskStatus.Done))
+                    {
+                        <div class="card mb-2" data-id="@task.Id">
+                            <div class="card-body">
+                                <h5 class="card-title">@task.Title</h5>
+                                <p class="card-text">@(string.IsNullOrEmpty(task.Description) ? "Без описания" : task.Description.Substring(0, Math.Min(task.Description.Length, 100)) + (task.Description.Length > 100 ? "..." : ""))</p>
+                                <p class="card-text"><small class="text-muted">Приоритет: @task.Priority.GetDisplayName()</small></p>
+                                <p class="card-text"><small class="text-muted">Дедлайн: @(task.Deadline.HasValue ? task.Deadline.Value.ToString("dd.MM.yyyy") : "Не указан")</small></p>
+                                <p class="card-text"><small class="text-muted">Создано: @(task.CreatedBy != null ? task.CreatedBy.UserName : "Неизвестно")</small></p>
+                                <p class="card-text"><small class="text-muted">Назначено: @(task.AssignedTo != null ? task.AssignedTo.UserName : "Не назначено")</small></p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <h4>Календарь задач</h4>
+        <div id="calendar" class="mb-3"></div>
+        <h4>Добавить задачу</h4>
+        <form asp-action="CreateTask" method="post">
+            <input type="hidden" name="projectId" value="@project.Id" />
+            <input type="hidden" name="teamId" value="@team.Id" />
+            <div class="form-group mb-2">
+                <label asp-for="Title" class="control-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-2">
+                <label asp-for="Description" class="control-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-2">
+                <label asp-for="Priority" class="control-label"></label>
+                <select asp-for="Priority" class="form-control" asp-items="Html.GetEnumSelectList<KanbanTaskPriority>()"></select>
+            </div>
+            <div class="form-group mb-2">
+                <label asp-for="Deadline" class="control-label"></label>
+                <input asp-for="Deadline" type="date" class="form-control" />
+            </div>
+            <div class="form-group mb-2">
+                <label asp-for="AssignedToId" class="control-label">Назначить</label>
+                <select asp-for="AssignedToId" class="form-control">
+                    <option value="">Не назначено</option>
+                    @foreach (var member in teamMembers)
+                    {
+                        <option value="@member.Id">@member.UserName</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Добавить задачу" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet" />
+    <style>
+        .kanban-column {
+            min-height: 300px;
+            background-color: #f8f9fa;
+            border: 1px dashed #dee2e6;
+            padding: 10px;
+        }
+        .card {
+            cursor: move;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Инициализация drag-and-drop для столбцов канбан
+            ['todo', 'inProgress', 'done'].forEach(columnId => {
+                new Sortable(document.getElementById(columnId), {
+                    group: 'kanban',
+                    animation: 150,
+                    onEnd: function (evt) {
+                        var taskId = evt.item.getAttribute('data-id');
+                        var newStatus = evt.to.getAttribute('data-status');
+                        
+                        // Отправляем запрос на обновление статуса задачи
+                        fetch('/Kanban/UpdateTaskStatus', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            },
+                            body: JSON.stringify({ taskId: parseInt(taskId), newStatus: newStatus })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) {
+                                alert('Ошибка при обновлении статуса задачи');
+                                // Можно откатить перемещение, если сервер вернул ошибку
+                                evt.item.parentNode.removeChild(evt.item);
+                                evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Ошибка при обновлении статуса задачи');
+                            evt.item.parentNode.removeChild(evt.item);
+                            evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                        });
+                    }
+                });
+            });
+
+            // Инициализация календаря
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: function (fetchInfo, successCallback, failureCallback) {
+                    fetch(`/Kanban/GetTasks?projectId=@project.Id&teamId=@team.Id`)
+                        .then(response => response.json())
+                        .then(data => {
+                            var events = [];
+                            data.forEach(task => {
+                                events.push({
+                                    title: task.title,
+                                    start: task.createdAt,
+                                    color: '#28a745' // Зеленый для даты создания
+                                });
+                                if (task.deadline) {
+                                    events.push({
+                                        title: task.title + ' (Дедлайн)',
+                                        start: task.deadline,
+                                        color: '#dc3545' // Красный для дедлайна
+                                    });
+                                }
+                            });
+                            successCallback(events);
+                        })
+                        .catch(error => {
+                            console.error('Error fetching tasks:', error);
+                            failureCallback(error);
+                        });
+                },
+                eventClick: function (info) {
+                    alert('Задача: ' + info.event.title);
+                },
+                height: 'auto',
+                contentHeight: '400px'
+            });
+            calendar.render();
+        });
+    </script>
+}

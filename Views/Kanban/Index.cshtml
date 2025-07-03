@@ -1,0 +1,29 @@
+@{
+    ViewData["Title"] = "Канбан-доски";
+}
+
+<h1>Канбан-доски</h1>
+
+@if (ViewBag.BoardPairs != null && ViewBag.BoardPairs.Count > 0)
+{
+    <p>Выберите канбан-доску для просмотра:</p>
+    <div class="row">
+        <div class="col-md-6">
+            <ul class="list-group">
+                @foreach (var pair in ViewBag.BoardPairs)
+                {
+                    <li class="list-group-item">
+                        <a asp-action="Board" asp-route-projectId="@pair.Project.Id" asp-route-teamId="@pair.Team.Id">
+                            <strong>Проект:</strong> @pair.Project.IdeaName <br />
+                            <strong>Команда:</strong> @pair.Team.Name
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">У вас нет доступных канбан-досок. Вы должны быть участником команды или заказчиком проекта, чтобы получить доступ к канбан-доске.</div>
+}

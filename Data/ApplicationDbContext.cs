@@ -23,6 +23,8 @@ namespace lol.Data
         public DbSet<ProjectExchange> ProjectExchanges { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
         public DbSet<MessageRead> MessageReads { get; set; }
+        public DbSet<CompanyCard> CompanyCards { get; set; }
+        public DbSet<KanbanTask> KanbanTasks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -88,6 +90,38 @@ namespace lol.Data
 
             // Устанавливаем стоковую аватарку для всех пользователей, у кого она не задана
             builder.Entity<ApplicationUser>().Property(u => u.AvatarPath).HasDefaultValue("/images/avatars/default.png");
+
+            // Настройка связи один-ко-многим для CompanyCard
+            builder.Entity<CompanyCard>()
+                .HasOne(cc => cc.User)
+                .WithMany()
+                .HasForeignKey(cc => cc.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Настройка связей для KanbanTask
+            builder.Entity<KanbanTask>()
+                .HasOne(kt => kt.Project)
+                .WithMany()
+                .HasForeignKey(kt => kt.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<KanbanTask>()
+                .HasOne(kt => kt.Team)
+                .WithMany()
+                .HasForeignKey(kt => kt.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<KanbanTask>()
+                .HasOne(kt => kt.CreatedBy)
+                .WithMany()
+                .HasForeignKey(kt => kt.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<KanbanTask>()
+                .HasOne(kt => kt.AssignedTo)
+                .WithMany()
+                .HasForeignKey(kt => kt.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
-} 
+}
