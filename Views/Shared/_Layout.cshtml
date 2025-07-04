@@ -22,6 +22,16 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Главная</a>
                         </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            // Проверяем, есть ли у пользователя доступ к канбан-доске через флаг в ViewBag или другой механизм
+                            @if (ViewBag.HasKanbanAccess == true)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Kanban" asp-action="Index">Канбан-доска</a>
+                                </li>
+                            }
+                        }
                     </ul>
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated == true)
@@ -35,15 +45,18 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Team" asp-action="Index">Команды</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Project" asp-action="Index">Проекты</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="PublicExchange" asp-action="Index">Биржи проектов</a>
-                            </li>
+                            @if(!User.IsInRole("Эксперт"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Team" asp-action="Index">Команды</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Project" asp-action="Index">Проекты</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="PublicExchange" asp-action="Index">Биржи проектов</a>
+                                </li>
+                            }
                             @if (User.IsInRole("Эксперт"))
                             {
                                 <li class="nav-item">

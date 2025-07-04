@@ -72,6 +72,14 @@
         {
             <li style="display: flex; align-items: center; gap: 10px;">
                 <a asp-controller="Team" asp-action="Details" asp-route-id="@execTeam.Id">@execTeam.Name</a>
+                @if (User.Identity.IsAuthenticated)
+                {
+                    var userId = UserManager.GetUserId(User);
+                    if (execTeam.Members.Any(m => m.Id == userId) || execTeam.CreatorId == userId)
+                    {
+                        <a asp-controller="Kanban" asp-action="Board" asp-route-projectId="@Model.Id" asp-route-teamId="@execTeam.Id" class="btn btn-primary btn-sm">Перейти на доску Канбан</a>
+                    }
+                }
                 @if (User.IsInRole("Заказчик") && Model.Customer == User.Identity.Name)
                 {
                     <form asp-action="RemoveExecutor" asp-controller="Project" method="post" style="display:inline; margin:0;">
@@ -152,4 +160,4 @@
     .tech-badge:hover {
         filter: brightness(0.95);
     }
-</style> 
+</style>

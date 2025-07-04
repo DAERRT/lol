@@ -6,15 +6,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Microsoft.Extensions.Logging;
 
 namespace lol.Controllers
 {
     public class PublicExchangeController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public PublicExchangeController(ApplicationDbContext context)
+        private readonly ILogger<PublicExchangeController> _logger;
+
+        public PublicExchangeController(ApplicationDbContext context, ILogger<PublicExchangeController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // GET: Список всех бирж (активные сверху)
@@ -55,6 +59,7 @@ namespace lol.Controllers
             ViewBag.ProjectCustomer = projectCustomer;
             ViewBag.StatusList = System.Enum.GetValues(typeof(ProjectStatus)).Cast<ProjectStatus>().ToList();
             ViewBag.CustomerList = exchange.Projects.Select(p => p.Customer).Distinct().ToList();
+            ViewBag.IsActive = exchange.IsActive;
             exchange.Projects = projects.ToList();
 
             // Проверяем, является ли пользователь тимлидом или создателем команды
@@ -63,18 +68,35 @@ namespace lol.Controllers
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    var isTeamLeader = await _context.Teams
-                        .AnyAsync(t => t.LeaderId == userId || t.CreatorId == userId);
+                    var userTeams = await _context.Teams
+                        .Where(t => t.LeaderId == userId || t.CreatorId == userId)
+                        .ToListAsync();
+                    var isTeamLeader = userTeams.Any();
                     ViewBag.IsTeamLeader = isTeamLeader;
+                    if (isTeamLeader)
+                    {
+                        var teamIds = userTeams.Select(t => t.Id).ToList();
+                        var appliedProjectIds = await _context.ProjectApplications
+                            .Where(pa => teamIds.Contains(pa.TeamId))
+                            .Select(pa => pa.ProjectId)
+                            .ToListAsync();
+                        ViewBag.AppliedProjectIds = appliedProjectIds;
+                    }
+                    else
+                    {
+                        ViewBag.AppliedProjectIds = new List<int>();
+                    }
                 }
                 else
                 {
                     ViewBag.IsTeamLeader = false;
+                    ViewBag.AppliedProjectIds = new List<int>();
                 }
             }
             else
             {
                 ViewBag.IsTeamLeader = false;
+                ViewBag.AppliedProjectIds = new List<int>();
             }
 
             return View(exchange);
@@ -87,6 +109,7 @@ namespace lol.Controllers
                 .Include(e => e.Projects)
                 .FirstOrDefaultAsync(e => e.Id == id);
             if (exchange == null) return NotFound();
+            ViewBag.IsActive = exchange.IsActive;
             var projects = exchange.Projects.AsQueryable();
             if (!string.IsNullOrWhiteSpace(projectSearch))
                 projects = projects.Where(p => p.IdeaName.Contains(projectSearch));
@@ -94,7 +117,8 @@ namespace lol.Controllers
                 projects = projects.Where(p => p.Status == projectStatus);
             if (!string.IsNullOrWhiteSpace(projectCustomer))
                 projects = projects.Where(p => p.Customer.Contains(projectCustomer));
-            ViewBag.IsActive = exchange.IsActive;
+            
+            _logger.LogInformation($"Exchange ID: {id}, IsActive in DB: {exchange.IsActive}");
 
             // Проверяем, является ли пользователь тимлидом или создателем команды
             if (User.Identity.IsAuthenticated)
@@ -102,18 +126,35 @@ namespace lol.Controllers
                 var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    var isTeamLeader = await _context.Teams
-                        .AnyAsync(t => t.LeaderId == userId || t.CreatorId == userId);
+                    var userTeams = await _context.Teams
+                        .Where(t => t.LeaderId == userId || t.CreatorId == userId)
+                        .ToListAsync();
+                    var isTeamLeader = userTeams.Any();
                     ViewBag.IsTeamLeader = isTeamLeader;
+                    if (isTeamLeader)
+                    {
+                        var teamIds = userTeams.Select(t => t.Id).ToList();
+                        var appliedProjectIds = await _context.ProjectApplications
+                            .Where(pa => teamIds.Contains(pa.TeamId))
+                            .Select(pa => pa.ProjectId)
+                            .ToListAsync();
+                        ViewBag.AppliedProjectIds = appliedProjectIds;
+                    }
+                    else
+                    {
+                        ViewBag.AppliedProjectIds = new List<int>();
+                    }
                 }
                 else
                 {
                     ViewBag.IsTeamLeader = false;
+                    ViewBag.AppliedProjectIds = new List<int>();
                 }
             }
             else
             {
                 ViewBag.IsTeamLeader = false;
+                ViewBag.AppliedProjectIds = new List<int>();
             }
 
             return PartialView("~/Views/PublicExchange/ProjectTablePartial.cshtml", projects.ToList());

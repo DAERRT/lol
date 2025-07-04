@@ -10,7 +10,7 @@
     <div class="row">
         <div class="col-md-6">
             <ul class="list-group">
-                @foreach (var pair in ViewBag.BoardPairs)
+                @foreach (var pair in (List<(Team Team, Project Project)>)ViewBag.BoardPairs)
                 {
                     <li class="list-group-item">
                         <a asp-action="Board" asp-route-projectId="@pair.Project.Id" asp-route-teamId="@pair.Team.Id">

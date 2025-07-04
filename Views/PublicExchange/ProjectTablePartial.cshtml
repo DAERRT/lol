@@ -30,17 +30,35 @@ else
                     @{
                         bool isTeamLeader = ViewBag.IsTeamLeader as bool? ?? false;
                     }
-                    @if (project.Status == lol.Models.ProjectStatus.Published && isActive && isTeamLeader)
-                    {
-                        <a asp-controller="ProjectApplication" asp-action="Create" asp-route-projectId="@project.Id" class="btn btn-primary btn-sm">Подать заявку</a>
-                    }
-                    else
-                    {
-                        <span class="text-muted">-</span>
+                    @{
+                        var appliedProjectIds = ViewBag.AppliedProjectIds as List<int> ?? new List<int>();
+                        if (project.Status == lol.Models.ProjectStatus.Published && isActive && isTeamLeader && !appliedProjectIds.Contains(project.Id))
+                        {
+                            <a asp-controller="ProjectApplication" asp-action="Create" asp-route-projectId="@project.Id" class="btn btn-primary btn-sm">Подать заявку</a>
+                        }
+                        else if (appliedProjectIds.Contains(project.Id))
+                        {
+                            <span class="text-muted">Заявка на участие уже подана</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
                     }
                 </td>
             </tr>
         }
         </tbody>
     </table>
+    <script>
+        console.log("IsActive (after cast): " + @((ViewBag.IsActive as bool?) ?? false ? "true" : "false"));
+        console.log("IsActive (raw value): " + "@ViewBag.IsActive");
+        console.log("IsTeamLeader: " + @((ViewBag.IsTeamLeader as bool?) ?? false ? "true" : "false"));
+        @foreach (var project in Model)
+        {
+            <text>
+                console.log("Project: @project.IdeaName, Status: @project.Status, Published: " + @((project.Status == lol.Models.ProjectStatus.Published) ? "true" : "false"));
+            </text>
+        }
+    </script>
 }

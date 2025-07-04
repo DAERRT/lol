@@ -45,6 +45,42 @@ namespace lol.Controllers
                 .Select(x => x.Count)
                 .ToList();
 
+            // Check if user has access to Kanban board
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userEmail = User.Identity.Name; // Assuming email is used as username
+            var teams = await _context.Teams
+                .Include(t => t.ExecutorProjects)
+                .Where(t => t.Members.Any(m => m.Id == userId) || t.CreatorId == userId)
+                .ToListAsync();
+
+            var customerProjects = await _context.Projects
+                .Include(p => p.ExecutorTeams)
+                .Where(p => p.Customer == userEmail)
+                .ToListAsync();
+
+            var boardPairs = new List<(Team Team, Project Project)>();
+
+            foreach (var team in teams)
+            {
+                foreach (var project in team.ExecutorProjects)
+                {
+                    boardPairs.Add((team, project));
+                }
+            }
+
+            foreach (var project in customerProjects)
+            {
+                foreach (var team in project.ExecutorTeams)
+                {
+                    if (!boardPairs.Any(bp => bp.Team.Id == team.Id && bp.Project.Id == project.Id))
+                    {
+                        boardPairs.Add((team, project));
+                    }
+                }
+            }
+
+            ViewBag.HasKanbanAccess = boardPairs.Any();
+
             // Pass data to view
             ViewBag.UserCount = userCount;
             ViewBag.ProjectCount = projectCount;

@@ -30,12 +30,10 @@ namespace lol.Models
         [Display(Name = "Дедлайн")]
         public DateTime? Deadline { get; set; }
 
-        [Required]
         public int ProjectId { get; set; }
         [ForeignKey("ProjectId")]
         public Project Project { get; set; }
 
-        [Required]
         public int TeamId { get; set; }
         [ForeignKey("TeamId")]
         public Team Team { get; set; }
