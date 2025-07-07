@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using lol.Hubs;
 using lol.Data;
+using Microsoft.Extensions.Logging;
 
 namespace lol.Controllers
 {
@@ -17,16 +18,18 @@ namespace lol.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly NotificationService _notificationService;
+        private readonly ILogger<ChatController> _logger;
 
         private readonly ApplicationDbContext _context;
 
-        public ChatController(ChatService chatService, UserManager<ApplicationUser> userManager, IHubContext<ChatHub> hubContext, NotificationService notificationService, ApplicationDbContext context) : base(context)
+        public ChatController(ChatService chatService, UserManager<ApplicationUser> userManager, IHubContext<ChatHub> hubContext, NotificationService notificationService, ApplicationDbContext context, ILogger<ChatController> logger) : base(context)
         {
             _chatService = chatService;
             _userManager = userManager;
             _hubContext = hubContext;
             _notificationService = notificationService;
             _context = context;
+            _logger = logger;
         }
 
         // Список чатов пользователя
@@ -67,9 +70,134 @@ namespace lol.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePrivate(string userId)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            var chat = await _chatService.GetOrCreatePrivateChatAsync(currentUser.Id, userId);
-            return RedirectToAction("Messages", new { chatId = chat.Id });
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    string errorMessage = $"[{DateTime.Now}] Error: userId is null or empty when attempting to create private chat\n";
+                    try
+                    {
+                        string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                        if (!Directory.Exists(logDir))
+                        {
+                            Directory.CreateDirectory(logDir);
+                            Console.WriteLine($"Created log directory at: {logDir}");
+                        }
+                        string logPath = Path.Combine(logDir, "app.log");
+                        System.IO.File.AppendAllText(logPath, errorMessage);
+                        Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+                    }
+                    catch (Exception logEx)
+                    {
+                        _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                        Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                    }
+                    return BadRequest($"Ошибка: ID пользователя не указан");
+                }
+                
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null)
+                {
+                    string errorMessage = $"[{DateTime.Now}] Error: Current user could not be retrieved\n";
+                    try
+                    {
+                        string logDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logs");
+                        Directory.CreateDirectory(logDir);
+                        string logPath = Path.Combine(logDir, "app.log");
+                        System.IO.File.AppendAllText(logPath, errorMessage);
+                    }
+                    catch (Exception logEx)
+                    {
+                        _logger.LogError(logEx, "Error writing to log file");
+                        Console.WriteLine($"Error writing to log file: {logEx.Message}");
+                    }
+                    return BadRequest($"Ошибка: Не удалось получить данные текущего пользователя");
+                }
+                
+                _logger.LogInformation($"Creating private chat for current user {currentUser.Id} with user {userId}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string logMessage = $"[{DateTime.Now}] Creating private chat for current user {currentUser.Id} with user {userId}\n";
+                    System.IO.File.AppendAllText(logPath, logMessage);
+                    Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+                
+                var chat = await _chatService.GetOrCreatePrivateChatAsync(currentUser.Id, userId);
+                _logger.LogInformation("Chat created with ID: {ChatId} for users {CurrentUserId} and {UserId}", chat.Id, currentUser.Id, userId);
+                _logger.LogInformation("Redirecting to Messages with chatId: {ChatId}", chat.Id);
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string logMessage = $"[{DateTime.Now}] Chat created with ID: {chat.Id} for users {currentUser.Id} and {userId}\n";
+                    System.IO.File.AppendAllText(logPath, logMessage);
+                    Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+                if (chat.Id <= 0)
+                {
+                    string errorMessage = $"[{DateTime.Now}] Warning: Invalid chat ID {chat.Id} after creation for users {currentUser.Id} and {userId}\n";
+                    try
+                    {
+                        string logDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "logs");
+                        Directory.CreateDirectory(logDir);
+                        string logPath = Path.Combine(logDir, "app.log");
+                        System.IO.File.AppendAllText(logPath, errorMessage);
+                    }
+                    catch (Exception logEx)
+                    {
+                        _logger.LogError(logEx, "Error writing to log file");
+                        Console.WriteLine($"Error writing to log file: {logEx.Message}");
+                    }
+                    return BadRequest($"Ошибка: Созданный чат имеет некорректный ID");
+                }
+                return RedirectToAction("Messages", new { chatId = chat.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating private chat for user {UserId}", userId);
+                Console.WriteLine($"Error creating private chat: {ex.Message}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string errorMessage = $"[{DateTime.Now}] Error creating private chat for user {userId}: {ex.Message}\n";
+                    System.IO.File.AppendAllText(logPath, errorMessage);
+                    Console.WriteLine($"Successfully wrote error to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+                return BadRequest($"Ошибка при создании чата: {ex.Message}");
+            }
         }
 
         // Создать групповой чат
@@ -113,7 +241,8 @@ namespace lol.Controllers
                     await file.CopyToAsync(stream);
                 }
                 var relPath = $"/uploads/{chatId}/{fileName}";
-                attachments.Add(new MessageAttachment {
+                attachments.Add(new MessageAttachment
+                {
                     FileName = file.FileName,
                     FilePath = relPath,
                     FileSize = file.Length,
@@ -122,7 +251,8 @@ namespace lol.Controllers
                 savedFiles.Add(new { Name = file.FileName, Path = relPath, Size = file.Length });
             }
             // Сохраняем сообщение и вложения
-            var message = new Message {
+            var message = new Message
+            {
                 ChatId = chatId,
                 UserId = user.Id,
                 Text = string.IsNullOrWhiteSpace(text) ? "" : text,
@@ -196,7 +326,8 @@ namespace lol.Controllers
         public async Task<IActionResult> GetChatAttachments(int chatId)
         {
             var attachments = await _chatService.GetChatAttachmentsAsync(chatId);
-            var result = attachments.Select(a => new {
+            var result = attachments.Select(a => new
+            {
                 a.Id,
                 a.FileName,
                 a.FilePath,
@@ -227,7 +358,7 @@ namespace lol.Controllers
             var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/avatars");
             if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
             var ext = Path.GetExtension(avatar.FileName);
-            var fileName = $"group_{chatId}_{Guid.NewGuid().ToString().Substring(0,8)}{ext}";
+            var fileName = $"group_{chatId}_{Guid.NewGuid().ToString().Substring(0, 8)}{ext}";
             var filePath = Path.Combine(uploads, fileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
@@ -296,4 +427,4 @@ namespace lol.Controllers
             return Json(new { success = true });
         }
     }
-} 
+}

@@ -7,10 +7,13 @@ namespace lol.Services
     public class ChatService
     {
         private readonly ApplicationDbContext _context;
-        public ChatService(ApplicationDbContext context)
+        private readonly ILogger<ChatService> _logger;
+        public ChatService(ApplicationDbContext context, ILogger<ChatService> logger)
         {
+            _logger = logger;
             _context = context;
         }
+        
 
         // Получить чаты пользователя
         public async Task<List<Chat>> GetUserChatsAsync(string userId)
@@ -37,20 +40,171 @@ namespace lol.Services
         // Создать личный чат (или вернуть существующий)
         public async Task<Chat> GetOrCreatePrivateChatAsync(string userId1, string userId2)
         {
+            _logger.LogInformation($"Attempting to find or create private chat for users {userId1} and {userId2}");
+            Console.WriteLine($"Attempting to find or create private chat for users {userId1} and {userId2}");
+            try
+            {
+                string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                if (!Directory.Exists(logDir))
+                {
+                    Directory.CreateDirectory(logDir);
+                    Console.WriteLine($"Created log directory at: {logDir}");
+                }
+                string logPath = Path.Combine(logDir, "app.log");
+                string logMessage = $"[{DateTime.Now}] Attempting to find or create private chat for users {userId1} and {userId2}\n";
+                System.IO.File.AppendAllText(logPath, logMessage);
+                Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+            }
+            catch (Exception logEx)
+            {
+                _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+            }
             var chat = await _context.Chats
                 .Include(c => c.ChatUsers)
                 .FirstOrDefaultAsync(c => !c.IsGroup && !c.IsTeamChat &&
                     c.ChatUsers.Any(u => u.UserId == userId1) &&
                     c.ChatUsers.Any(u => u.UserId == userId2) &&
                     c.ChatUsers.Count == 2);
-            if (chat != null) return chat;
+            if (chat != null)
+            {
+                _logger.LogInformation($"Existing chat found with ID: {chat.Id}");
+                Console.WriteLine($"Existing chat found with ID: {chat.Id}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string logMessage = $"[{DateTime.Now}] Existing chat found with ID: {chat.Id}\n";
+                    System.IO.File.AppendAllText(logPath, logMessage);
+                    Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+                return chat;
+            }
 
+            _logger.LogInformation($"No existing chat found, creating new chat for users {userId1} and {userId2}");
+            Console.WriteLine($"No existing chat found, creating new chat for users {userId1} and {userId2}");
+            try
+            {
+                string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                if (!Directory.Exists(logDir))
+                {
+                    Directory.CreateDirectory(logDir);
+                    Console.WriteLine($"Created log directory at: {logDir}");
+                }
+                string logPath = Path.Combine(logDir, "app.log");
+                string logMessage = $"[{DateTime.Now}] No existing chat found, creating new chat for users {userId1} and {userId2}\n";
+                System.IO.File.AppendAllText(logPath, logMessage);
+                Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+            }
+            catch (Exception logEx)
+            {
+                _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+            }
             chat = new Chat { IsGroup = false, IsTeamChat = false };
             _context.Chats.Add(chat);
-            await _context.SaveChangesAsync();
+            try {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Chat created with ID: {chat.Id} for users {userId1} and {userId2}");
+                Console.WriteLine($"Chat created with ID: {chat.Id} for users {userId1} and {userId2}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string logMessage = $"[{DateTime.Now}] Chat created with ID: {chat.Id} for users {userId1} and {userId2}\n";
+                    System.IO.File.AppendAllText(logPath, logMessage);
+                    Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+            } catch (Exception ex) {
+                _logger.LogError($"Error saving chat: {ex.Message}");
+                Console.WriteLine($"Error saving chat: {ex.Message}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string errorMessage = $"[{DateTime.Now}] Error saving chat: {ex.Message}\n";
+                    System.IO.File.AppendAllText(logPath, errorMessage);
+                    Console.WriteLine($"Successfully wrote error to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+                throw;
+            }
             _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = userId1 });
             _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = userId2 });
-            await _context.SaveChangesAsync();
+            try {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Chat users added for chat ID: {chat.Id}");
+                Console.WriteLine($"Chat users added for chat ID: {chat.Id}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string logMessage = $"[{DateTime.Now}] Chat users added for chat ID: {chat.Id}\n";
+                    System.IO.File.AppendAllText(logPath, logMessage);
+                    Console.WriteLine($"Successfully wrote to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+            } catch (Exception ex) {
+                _logger.LogError($"Error adding chat users: {ex.Message}");
+                Console.WriteLine($"Error adding chat users: {ex.Message}");
+                try
+                {
+                    string logDir = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                    if (!Directory.Exists(logDir))
+                    {
+                        Directory.CreateDirectory(logDir);
+                        Console.WriteLine($"Created log directory at: {logDir}");
+                    }
+                    string logPath = Path.Combine(logDir, "app.log");
+                    string errorMessage = $"[{DateTime.Now}] Error adding chat users: {ex.Message}\n";
+                    System.IO.File.AppendAllText(logPath, errorMessage);
+                    Console.WriteLine($"Successfully wrote error to log file at: {logPath}");
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "Error writing to log file at {Path}", Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log"));
+                    Console.WriteLine($"Error writing to log file: {logEx.Message}. Attempted path: {Path.Combine(Directory.GetCurrentDirectory(), "logs", "app.log")}");
+                }
+                throw;
+            }
             return chat;
         }
 
@@ -332,4 +486,4 @@ namespace lol.Services
             }
         }
     }
-} 
+}

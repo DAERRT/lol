@@ -124,13 +124,30 @@ else
             $('#privateUserResults').empty();
         });
         // Отправка формы личного чата
-        $('#createPrivateChatForm').on('submit', function(e) {
-            e.preventDefault();
-            const userId = $('#privateUserId').val();
-            if (!userId) return;
-            $.post('/Chat/CreatePrivate', { userId: userId }, function(data) {
-                reloadChatListSidebar();
-                window.location.href = data.redirectUrl || data;
+        $(document).ready(function() {
+            console.log('Attaching submit handler to createPrivateChatForm');
+            $('#createChatBtn').on('click', function() {
+                console.log('Create chat button clicked');
+            });
+            $('#createPrivateChatForm').on('submit', function(e) {
+                e.preventDefault();
+                console.log('Form submission intercepted for private chat creation');
+                const userId = $('#privateUserId').val();
+                if (!userId) return;
+                console.log('Sending POST request to create private chat with user ID:', userId);
+                $.ajax({
+                    url: '/Chat/CreatePrivate',
+                    type: 'POST',
+                    data: { userId: userId },
+                    success: function(data) {
+                        console.log('POST request successful, response received:', data);
+                        reloadChatListSidebar();
+                        window.location.href = data.redirectUrl || data;
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error in POST request:', status, error);
+                    }
+                });
             });
         });
         // Поиск и выбор участников для группы
@@ -230,4 +247,4 @@ else
             setTimeout(updateAllUnreadBadges, 100);
         });
     </script>
-} 
+}

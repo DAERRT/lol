@@ -209,10 +209,33 @@ namespace lol.Controllers
                 return BadRequest("У вас уже есть активная заявка на вступление");
             }
 
+            var UserCompetencies = await _context.UserCompetencies
+                .Where(uc => uc.UserId == user.Id)
+                .Include(uc => uc.Competency)
+                    .ThenInclude(c => c.Category)
+                .Select(uc => new
+                {
+                    Name = uc.Competency.Name,
+                    CategoryColor = uc.Competency.Category.Color
+                })
+                .ToListAsync();
+
+            var UserCertificates = await _context.Certificates
+                .Where(uc => uc.UserId == user.Id)
+                .Select(uc => new
+                {
+                    Title = uc.Title,
+                    FilePath = uc.FilePath,
+                    UploadDate = uc.UploadDate.ToString("dd.MM.yyyy")
+                })
+                .ToListAsync();
+
             var request = new TeamRequest
             {
                 UserId = user.Id,
                 TeamId = id,
+                CompetenciesAtRequestJson = Newtonsoft.Json.JsonConvert.SerializeObject(UserCompetencies),
+                CertificatesAtRequestJson = Newtonsoft.Json.JsonConvert.SerializeObject(UserCertificates),
                 Message = message,
                 Status = RequestStatus.Pending,
                 DateCreated = DateTime.Now
@@ -534,4 +557,4 @@ namespace lol.Controllers
             return PartialView("~/Views/Team/TeamTablePartial.cshtml", teams);
         }
     }
-} 
+}

@@ -28,6 +28,7 @@ namespace lol.Data
         public DbSet<CompetencyCategory> CompetencyCategories { get; set; }
         public DbSet<Competency> Competencies { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
+        public DbSet<UserCompetency> UserCompetencies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
