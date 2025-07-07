@@ -94,6 +94,49 @@
         <div class="alert alert-info">У вас нет проектов в роли заказчика.</div>
     }
 }
+
+@if (ViewBag.UserRoles.Contains("Студент") || ViewBag.UserRoles.Contains("Тимлид"))
+{
+    <h4>Мои компетенции</h4>
+    @if (ViewBag.UserCompetencies != null && ((IEnumerable<lol.Models.Competency>)ViewBag.UserCompetencies).Any())
+    {
+        <div class="mb-3">
+            @foreach (var competency in (IEnumerable<lol.Models.Competency>)ViewBag.UserCompetencies)
+            {
+                <span class="badge" style="background-color: @competency.Category.Color; margin-right: 5px; margin-bottom: 5px;">@competency.Name</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">У вас нет выбранных компетенций.</div>
+    }
+    <a asp-action="Competencies" class="btn btn-primary mb-3">Выбрать компетенции</a>
+
+    <h4>Мои сертификаты</h4>
+    @if (ViewBag.Certificates != null && ((IEnumerable<lol.Models.Certificate>)ViewBag.Certificates).Any())
+    {
+        <div class="row mb-3">
+            @foreach (var cert in (IEnumerable<lol.Models.Certificate>)ViewBag.Certificates)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">@cert.Title</h5>
+                            <p class="card-text">Загружен: @cert.UploadDate.ToString("dd.MM.yyyy HH:mm")</p>
+                            <a href="@cert.FilePath" target="_blank" class="btn btn-sm btn-info">Просмотреть</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">У вас нет загруженных сертификатов.</div>
+    }
+    <a asp-action="Certificates" class="btn btn-primary mb-3">Загрузить сертификаты</a>
+}
 <h4>Заявка на роль "Заказчик"</h4>
 @if (ViewBag.CompanyCard != null)
 {

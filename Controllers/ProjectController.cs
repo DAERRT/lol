@@ -11,13 +11,13 @@ using lol.Services;
 namespace lol.Controllers
 {
     [Authorize]
-    public class ProjectController : Controller
+    public class ProjectController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly NotificationService _notificationService;
 
-        public ProjectController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, NotificationService notificationService)
+        public ProjectController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, NotificationService notificationService) : base(context)
         {
             _context = context;
             _userManager = userManager;

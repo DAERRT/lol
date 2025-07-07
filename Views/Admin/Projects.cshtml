@@ -2,13 +2,7 @@
 @{
     ViewData["Title"] = "Управление проектами";
 }
-<ul class="nav nav-tabs mb-4">
-    <li class="nav-item"><a class="nav-link" asp-action="Index">Пользователи</a></li>
-    <li class="nav-item"><a class="nav-link active" asp-action="Projects">Проекты</a></li>
-    <li class="nav-item"><a class="nav-link" asp-action="Teams">Команды</a></li>
-    <li class="nav-item"><a class="nav-link" asp-action="ProjectApplications">Заявки на проекты</a></li>
-    <li class="nav-item"><a class="nav-link" asp-action="ProjectExchanges">Биржи проектов</a></li>
-</ul>
+@await Html.PartialAsync("_adminNavBarPartial")
 <h2>Управление проектами</h2>
 <form asp-action="Projects" method="get" class="row mb-3">
     <div class="col-md-4">

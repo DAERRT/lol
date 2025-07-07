@@ -20,6 +20,8 @@ else
                     <th>Пользователь</th>
                     <th>Сообщение</th>
                     <th>Дата подачи</th>
+                    <th>Компетенции</th>
+                    <th>Сертификаты</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -30,6 +32,48 @@ else
                         <td>@request.User.FirstName @request.User.LastName (@request.User.Email)</td>
                         <td>@request.Message</td>
                         <td>@request.DateCreated.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(request.CompetenciesAtRequestJson))
+                            {
+                                var competencies = Newtonsoft.Json.JsonConvert.DeserializeObject<List<dynamic>>(request.CompetenciesAtRequestJson);
+                                if (competencies != null && competencies.Any())
+                                {
+                                    foreach (var comp in competencies)
+                                    {
+                                        <span class="badge" style="background-color: @comp.CategoryColor; margin-right: 5px;">@comp.Name</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Нет данных</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">Нет данных</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(request.CertificatesAtRequestJson))
+                            {
+                                var certificates = Newtonsoft.Json.JsonConvert.DeserializeObject<List<dynamic>>(request.CertificatesAtRequestJson);
+                                if (certificates != null && certificates.Any())
+                                {
+                                    foreach (var cert in certificates)
+                                    {
+                                        <div><a href="@cert.FilePath" target="_blank">@cert.Title</a> (Загружен: @cert.UploadDate)</div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Нет сертификатов</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">Нет сертификатов</span>
+                            }
+                        </td>
                         <td>
                             <div class="btn-group">
                                 <form asp-action="ProcessRequest" method="post" style="display: inline;">
@@ -57,4 +101,4 @@ else
 
 <div>
     <a asp-action="Details" asp-route-id="@ViewBag.TeamId" class="btn btn-secondary">Назад к команде</a>
-</div> 
+</div>

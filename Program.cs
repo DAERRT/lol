@@ -109,6 +109,7 @@ public class Program
 
         app.MapHub<lol.Hubs.NotificationHub>("/notificationHub");
         app.MapHub<lol.Hubs.ChatHub>("/chatHub");
+        app.MapHub<lol.Hubs.KanbanHub>("/kanbanHub");
 
         app.Run();
     }

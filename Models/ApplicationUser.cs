@@ -28,5 +28,11 @@ namespace lol.Models
 
         // Путь к аватарке
         public string AvatarPath { get; set; } = "/images/avatars/default.png";
+
+        // Компетенции пользователя
+        public ICollection<Competency> Competencies { get; set; }
+
+        // Сертификаты пользователя
+        public ICollection<Certificate> Certificates { get; set; }
     }
-} 
+}

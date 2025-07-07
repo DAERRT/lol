@@ -48,10 +48,68 @@
                                         <button class="btn btn-link p-0" type="button" id="taskActions_@task.Id" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="bi bi-three-dots"></i>
                                         </button>
-                                        <ul class="dropdown-menu" aria-labelledby="taskActions_@task.Id" style="display: none; position: absolute; z-index: 1000; background-color: white; border: 1px solid #ccc; padding: 0; margin: 0; list-style: none;">
+                                        <ul class="dropdown-menu" id="menu_@task.Id" aria-labelledby="taskActions_@task.Id">
                                             <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_@task.Id">Редактировать</a></li>
                                             <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(@task.Id, @project.Id, @team.Id)">Удалить</a></li>
                                         </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Modal for editing task -->
+                        <div class="modal fade" id="editTaskModal_@task.Id" tabindex="-1" aria-labelledby="editTaskModalLabel_@task.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editTaskModalLabel_@task.Id">Редактировать задачу: @task.Title</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form asp-action="EditTask" method="post">
+                                            <input type="hidden" name="id" value="@task.Id" />
+                                            <input type="hidden" name="projectId" value="@project.Id" />
+                                            <input type="hidden" name="teamId" value="@team.Id" />
+                                            @Html.AntiForgeryToken()
+                                            <div class="form-group mb-3">
+                                                <label for="title_@task.Id" class="control-label">Название</label>
+                                                <input type="text" name="title" id="title_@task.Id" class="form-control" value="@task.Title" required />
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="description_@task.Id" class="control-label">Описание</label>
+                                                <textarea name="description" id="description_@task.Id" class="form-control" rows="3">@task.Description</textarea>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="priority_@task.Id" class="control-label">Приоритет</label>
+                                                <select name="priority" id="priority_@task.Id" class="form-control" asp-items="Html.GetEnumSelectList<KanbanTaskPriority>()">
+                                                    <option value="@task.Priority">@task.Priority.GetDisplayName()</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="deadline_@task.Id" class="control-label">Дедлайн</label>
+                                                <input type="date" name="deadline" id="deadline_@task.Id" class="form-control" value="@(task.Deadline.HasValue ? task.Deadline.Value.ToString("yyyy-MM-dd") : "")" />
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="assignedToId_@task.Id" class="control-label">Назначить</label>
+                                                <select name="assignedToId" id="assignedToId_@task.Id" class="form-control">
+                                                    <option value="">Не назначено</option>
+                                                    @foreach (var member in teamMembers)
+                                                    {
+                                                        if (task.AssignedToId == member.Id)
+                                                        {
+                                                            <option value="@member.Id" selected>@member.UserName</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@member.Id">@member.UserName</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <input type="submit" value="Сохранить изменения" class="btn btn-primary" />
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -74,13 +132,71 @@
                                 <p class="card-text"><small class="text-muted">Назначено: @(task.AssignedTo != null ? task.AssignedTo.UserName : "Не назначено")</small></p>
                                 <div class="position-absolute top-0 end-0 m-2">
                                     <div class="dropdown">
-                                        <button class="btn btn-link p-0" type="button" id="taskActions_@task.Id" onclick="document.getElementById('menu_@task.Id').style.display = document.getElementById('menu_@task.Id').style.display === 'block' ? 'none' : 'block';">
+                                        <button class="btn btn-link p-0" type="button" id="taskActions_@task.Id" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="bi bi-three-dots"></i>
                                         </button>
-                                        <ul id="menu_@task.Id" style="display: none; position: absolute; z-index: 1000; background-color: white; border: 1px solid #ccc; padding: 0; margin: 0; list-style: none; min-width: 120px;">
-                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_@task.Id" style="padding: 8px 12px; display: block; color: #333; text-decoration: none;">Редактировать</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(@task.Id, @project.Id, @team.Id)" style="padding: 8px 12px; display: block; color: #dc3545; text-decoration: none;">Удалить</a></li>
+                                        <ul class="dropdown-menu" id="menu_@task.Id" aria-labelledby="taskActions_@task.Id">
+                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_@task.Id">Редактировать</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(@task.Id, @project.Id, @team.Id)">Удалить</a></li>
                                         </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Modal for editing task -->
+                        <div class="modal fade" id="editTaskModal_@task.Id" tabindex="-1" aria-labelledby="editTaskModalLabel_@task.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editTaskModalLabel_@task.Id">Редактировать задачу: @task.Title</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form asp-action="EditTask" method="post">
+                                            <input type="hidden" name="id" value="@task.Id" />
+                                            <input type="hidden" name="projectId" value="@project.Id" />
+                                            <input type="hidden" name="teamId" value="@team.Id" />
+                                            @Html.AntiForgeryToken()
+                                            <div class="form-group mb-3">
+                                                <label for="title_@task.Id" class="control-label">Название</label>
+                                                <input type="text" name="title" id="title_@task.Id" class="form-control" value="@task.Title" required />
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="description_@task.Id" class="control-label">Описание</label>
+                                                <textarea name="description" id="description_@task.Id" class="form-control" rows="3">@task.Description</textarea>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="priority_@task.Id" class="control-label">Приоритет</label>
+                                                <select name="priority" id="priority_@task.Id" class="form-control" asp-items="Html.GetEnumSelectList<KanbanTaskPriority>()">
+                                                    <option value="@task.Priority">@task.Priority.GetDisplayName()</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="deadline_@task.Id" class="control-label">Дедлайн</label>
+                                                <input type="date" name="deadline" id="deadline_@task.Id" class="form-control" value="@(task.Deadline.HasValue ? task.Deadline.Value.ToString("yyyy-MM-dd") : "")" />
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="assignedToId_@task.Id" class="control-label">Назначить</label>
+                                                <select name="assignedToId" id="assignedToId_@task.Id" class="form-control">
+                                                    <option value="">Не назначено</option>
+                                                    @foreach (var member in teamMembers)
+                                                    {
+                                                        if (task.AssignedToId == member.Id)
+                                                        {
+                                                            <option value="@member.Id" selected>@member.UserName</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@member.Id">@member.UserName</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <input type="submit" value="Сохранить изменения" class="btn btn-primary" />
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -103,13 +219,71 @@
                                 <p class="card-text"><small class="text-muted">Назначено: @(task.AssignedTo != null ? task.AssignedTo.UserName : "Не назначено")</small></p>
                                 <div class="position-absolute top-0 end-0 m-2">
                                     <div class="dropdown">
-                                        <button class="btn btn-link p-0" type="button" id="taskActions_@task.Id" onclick="document.getElementById('menu_@task.Id').style.display = document.getElementById('menu_@task.Id').style.display === 'block' ? 'none' : 'block';">
+                                        <button class="btn btn-link p-0" type="button" id="taskActions_@task.Id" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="bi bi-three-dots"></i>
                                         </button>
-                                        <ul id="menu_@task.Id" style="display: none; position: absolute; z-index: 1000; background-color: white; border: 1px solid #ccc; padding: 0; margin: 0; list-style: none; min-width: 120px;">
-                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_@task.Id" style="padding: 8px 12px; display: block; color: #333; text-decoration: none;">Редактировать</a></li>
-                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(@task.Id, @project.Id, @team.Id)" style="padding: 8px 12px; display: block; color: #dc3545; text-decoration: none;">Удалить</a></li>
+                                        <ul class="dropdown-menu" id="menu_@task.Id" aria-labelledby="taskActions_@task.Id">
+                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_@task.Id">Редактировать</a></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(@task.Id, @project.Id, @team.Id)">Удалить</a></li>
                                         </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Modal for editing task -->
+                        <div class="modal fade" id="editTaskModal_@task.Id" tabindex="-1" aria-labelledby="editTaskModalLabel_@task.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editTaskModalLabel_@task.Id">Редактировать задачу: @task.Title</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form asp-action="EditTask" method="post">
+                                            <input type="hidden" name="id" value="@task.Id" />
+                                            <input type="hidden" name="projectId" value="@project.Id" />
+                                            <input type="hidden" name="teamId" value="@team.Id" />
+                                            @Html.AntiForgeryToken()
+                                            <div class="form-group mb-3">
+                                                <label for="title_@task.Id" class="control-label">Название</label>
+                                                <input type="text" name="title" id="title_@task.Id" class="form-control" value="@task.Title" required />
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="description_@task.Id" class="control-label">Описание</label>
+                                                <textarea name="description" id="description_@task.Id" class="form-control" rows="3">@task.Description</textarea>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="priority_@task.Id" class="control-label">Приоритет</label>
+                                                <select name="priority" id="priority_@task.Id" class="form-control" asp-items="Html.GetEnumSelectList<KanbanTaskPriority>()">
+                                                    <option value="@task.Priority">@task.Priority.GetDisplayName()</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="deadline_@task.Id" class="control-label">Дедлайн</label>
+                                                <input type="date" name="deadline" id="deadline_@task.Id" class="form-control" value="@(task.Deadline.HasValue ? task.Deadline.Value.ToString("yyyy-MM-dd") : "")" />
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label for="assignedToId_@task.Id" class="control-label">Назначить</label>
+                                                <select name="assignedToId" id="assignedToId_@task.Id" class="form-control">
+                                                    <option value="">Не назначено</option>
+                                                    @foreach (var member in teamMembers)
+                                                    {
+                                                        if (task.AssignedToId == member.Id)
+                                                        {
+                                                            <option value="@member.Id" selected>@member.UserName</option>
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="@member.Id">@member.UserName</option>
+                                                        }
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <input type="submit" value="Сохранить изменения" class="btn btn-primary" />
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -196,7 +370,207 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/lib/signalr/dist/browser/signalr.min.js"></script>
     <script>
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/kanbanHub")
+            .build();
+
+        connection.on("TaskUpdated", function (action, taskData) {
+            switch (action) {
+                case "create":
+                    addTaskToBoard(taskData);
+                    break;
+                case "update":
+                    updateTaskOnBoard(taskData);
+                    break;
+                case "updateStatus":
+                    updateTaskStatusOnBoard(taskData);
+                    break;
+                case "delete":
+                    removeTaskFromBoard(taskData);
+                    break;
+            }
+        });
+
+        connection.start().then(function () {
+            connection.invoke("JoinBoard", @project.Id, @team.Id).catch(function (err) {
+                return console.error(err.toString());
+            });
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        window.addEventListener('beforeunload', function () {
+            connection.invoke("LeaveBoard", @project.Id, @team.Id).catch(function (err) {
+                return console.error(err.toString());
+            });
+        });
+
+        function addTaskToBoard(task) {
+            var columnId;
+            switch (task.status) {
+                case "ToDo":
+                    columnId = "todo";
+                    break;
+                case "InProgress":
+                    columnId = "inProgress";
+                    break;
+                case "Done":
+                    columnId = "done";
+                    break;
+                default:
+                    columnId = "todo";
+            }
+            var column = document.getElementById(columnId);
+            var card = document.createElement("div");
+            card.className = "card mb-2";
+            card.setAttribute("data-id", task.id);
+            card.innerHTML = `
+                <div class="card-body position-relative">
+                    <h5 class="card-title">${task.title}</h5>
+                    <p class="card-text">${task.description ? task.description.substring(0, 100) + (task.description.length > 100 ? "..." : "") : "Без описания"}</p>
+                    <p class="card-text"><small class="text-muted">Приоритет: ${task.priority}</small></p>
+                    <p class="card-text"><small class="text-muted">Дедлайн: ${task.deadline ? new Date(task.deadline).toLocaleDateString("ru-RU") : "Не указан"}</small></p>
+                    <p class="card-text"><small class="text-muted">Создано: ${task.createdBy}</small></p>
+                    <p class="card-text"><small class="text-muted">Назначено: ${task.assignedTo}</small></p>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <div class="dropdown">
+                            <button class="btn btn-link p-0" type="button" id="taskActions_${task.id}" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu" id="menu_${task.id}" aria-labelledby="taskActions_${task.id}">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_${task.id}">Редактировать</a></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(${task.id}, @project.Id, @team.Id)">Удалить</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            column.appendChild(card);
+            // Dynamically add edit modal (simplified, ideally should be fully formed like in the original)
+            var modalContainer = document.createElement("div");
+            modalContainer.innerHTML = `
+                <div class="modal fade" id="editTaskModal_${task.id}" tabindex="-1" aria-labelledby="editTaskModalLabel_${task.id}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editTaskModalLabel_${task.id}">Редактировать задачу: ${task.title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form asp-action="EditTask" method="post">
+                                    <input type="hidden" name="id" value="${task.id}" />
+                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                    <input type="hidden" name="teamId" value="@team.Id" />
+                                    <input name="__RequestVerificationToken" type="hidden" value="${document.querySelector('input[name="__RequestVerificationToken"]').value}" />
+                                    <div class="form-group mb-3">
+                                        <label for="title_${task.id}" class="control-label">Название</label>
+                                        <input type="text" name="title" id="title_${task.id}" class="form-control" value="${task.title}" required />
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label for="description_${task.id}" class="control-label">Описание</label>
+                                        <textarea name="description" id="description_${task.id}" class="form-control" rows="3">${task.description || ""}</textarea>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label for="priority_${task.id}" class="control-label">Приоритет</label>
+                                        <select name="priority" id="priority_${task.id}" class="form-control">
+                                            <option value="${task.priority}">${task.priority}</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label for="deadline_${task.id}" class="control-label">Дедлайн</label>
+                                        <input type="date" name="deadline" id="deadline_${task.id}" class="form-control" value="${task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : ""}" />
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label for="assignedToId_${task.id}" class="control-label">Назначить</label>
+                                        <select name="assignedToId" id="assignedToId_${task.id}" class="form-control">
+                                            <option value="">Не назначено</option>
+                                            ${Array.from(document.querySelectorAll('#assignedToId_1 option')).map(opt => {
+                                                if (opt.value && opt.text === task.assignedTo) {
+                                                    return `<option value="${opt.value}" selected>${opt.text}</option>`;
+                                                } else if (opt.value) {
+                                                    return `<option value="${opt.value}">${opt.text}</option>`;
+                                                }
+                                                return '';
+                                            }).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="submit" value="Сохранить изменения" class="btn btn-primary" />
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalContainer.firstElementChild);
+        }
+
+        function updateTaskOnBoard(task) {
+            var card = document.querySelector(`.card[data-id="${task.id}"]`);
+            if (card) {
+                card.innerHTML = `
+                    <div class="card-body position-relative">
+                        <h5 class="card-title">${task.title}</h5>
+                        <p class="card-text">${task.description ? task.description.substring(0, 100) + (task.description.length > 100 ? "..." : "") : "Без описания"}</p>
+                        <p class="card-text"><small class="text-muted">Приоритет: ${task.priority}</small></p>
+                        <p class="card-text"><small class="text-muted">Дедлайн: ${task.deadline ? new Date(task.deadline).toLocaleDateString("ru-RU") : "Не указан"}</small></p>
+                        <p class="card-text"><small class="text-muted">Создано: ${card.querySelector('small:nth-child(3)').textContent.split(': ')[1]}</small></p>
+                        <p class="card-text"><small class="text-muted">Назначено: ${task.assignedTo}</small></p>
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <div class="dropdown">
+                                <button class="btn btn-link p-0" type="button" id="taskActions_${task.id}" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu" id="menu_${task.id}" aria-labelledby="taskActions_${task.id}">
+                                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editTaskModal_${task.id}">Редактировать</a></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteTask(${task.id}, @project.Id, @team.Id)">Удалить</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateTaskStatusOnBoard(task) {
+            var card = document.querySelector(`.card[data-id="${task.id}"]`);
+            if (card) {
+                var currentColumn = card.parentElement;
+                var newColumnId;
+                switch (task.status) {
+                    case "ToDo":
+                        newColumnId = "todo";
+                        break;
+                    case "InProgress":
+                        newColumnId = "inProgress";
+                        break;
+                    case "Done":
+                        newColumnId = "done";
+                        break;
+                    default:
+                        newColumnId = "todo";
+                }
+                var newColumn = document.getElementById(newColumnId);
+                if (currentColumn !== newColumn) {
+                    newColumn.appendChild(card);
+                }
+            }
+        }
+
+        function removeTaskFromBoard(task) {
+            var card = document.querySelector(`.card[data-id="${task.id}"]`);
+            if (card) {
+                card.remove();
+            }
+            var modal = document.querySelector(`#editTaskModal_${task.id}`);
+            if (modal) {
+                modal.remove();
+            }
+        }
         document.addEventListener('DOMContentLoaded', function () {
             // Инициализация drag-and-drop для столбцов канбан
             ['todo', 'inProgress', 'done'].forEach(columnId => {
@@ -292,10 +666,52 @@
                 }
             };
 
-            // Инициализация dropdown для трех точек
-            var dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-            dropdowns.forEach(function(dropdown) {
-                new bootstrap.Dropdown(dropdown);
+            // Инициализация dropdown для трех точек с использованием делегирования событий
+            document.body.addEventListener('click', function(e) {
+                var target = e.target.closest('[data-bs-toggle="dropdown"]');
+                if (target) {
+                    e.preventDefault();
+                    var dropdownId = target.getAttribute('id');
+                    var dropdownElement = document.querySelector(`[aria-labelledby="${dropdownId}"]`);
+                    if (dropdownElement) {
+                        if (dropdownElement.classList.contains('show')) {
+                            dropdownElement.classList.remove('show');
+                        } else {
+                            dropdownElement.classList.add('show');
+                        }
+                    }
+                }
+            });
+
+            // Обеспечение открытия модального окна при клике на "Редактировать"
+            document.querySelectorAll('.dropdown-item[data-bs-toggle="modal"]').forEach(function(editLink) {
+                editLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var targetModalId = this.getAttribute('data-bs-target');
+                    var targetModal = document.querySelector(targetModalId);
+                    if (targetModal) {
+                        var modal = new bootstrap.Modal(targetModal);
+                        modal.show();
+                    }
+                });
+            });
+
+            // Обеспечение закрытия модального окна и удаления затемнения при клике на "Закрыть" или "Отмена"
+            document.querySelectorAll('.modal .btn-close, .modal .btn-secondary').forEach(function(closeButton) {
+                closeButton.addEventListener('click', function(e) {
+                    var modalElement = this.closest('.modal');
+                    if (modalElement) {
+                        var modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        // Дополнительно удаляем backdrop и классы с body
+                        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style.overflow = '';
+                        document.body.style.paddingRight = '';
+                    }
+                });
             });
 
             // Инициализация календаря

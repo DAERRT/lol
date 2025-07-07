@@ -25,6 +25,9 @@ namespace lol.Data
         public DbSet<MessageRead> MessageReads { get; set; }
         public DbSet<CompanyCard> CompanyCards { get; set; }
         public DbSet<KanbanTask> KanbanTasks { get; set; }
+        public DbSet<CompetencyCategory> CompetencyCategories { get; set; }
+        public DbSet<Competency> Competencies { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -122,6 +125,36 @@ namespace lol.Data
                 .WithMany()
                 .HasForeignKey(kt => kt.AssignedToId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Настройка связи многие-ко-многим между ApplicationUser и Competency через UserCompetency
+            builder.Entity<ApplicationUser>()
+                .HasMany(u => u.Competencies)
+                .WithMany(c => c.Users)
+                .UsingEntity<UserCompetency>(
+                    j => j
+                        .HasOne(uc => uc.Competency)
+                        .WithMany()
+                        .HasForeignKey(uc => uc.CompetencyId),
+                    j => j
+                        .HasOne(uc => uc.User)
+                        .WithMany()
+                        .HasForeignKey(uc => uc.UserId),
+                    j => j.ToTable("UserCompetencies")
+                );
+
+            // Настройка связи один-ко-многим между Competency и CompetencyCategory
+            builder.Entity<Competency>()
+                .HasOne(c => c.Category)
+                .WithMany()
+                .HasForeignKey(c => c.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Настройка связи один-ко-многим между Certificate и ApplicationUser
+            builder.Entity<Certificate>()
+                .HasOne(c => c.User)
+                .WithMany(u => u.Certificates)
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -10,12 +10,12 @@ using Microsoft.Extensions.Logging;
 
 namespace lol.Controllers
 {
-    public class PublicExchangeController : Controller
+    public class PublicExchangeController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<PublicExchangeController> _logger;
 
-        public PublicExchangeController(ApplicationDbContext context, ILogger<PublicExchangeController> logger)
+        public PublicExchangeController(ApplicationDbContext context, ILogger<PublicExchangeController> logger) : base(context)
         {
             _context = context;
             _logger = logger;
@@ -127,7 +127,7 @@ namespace lol.Controllers
                 if (!string.IsNullOrEmpty(userId))
                 {
                     var userTeams = await _context.Teams
-                        .Where(t => t.LeaderId == userId || t.CreatorId == userId)
+                        .Where(t => t.LeaderId == userId)
                         .ToListAsync();
                     var isTeamLeader = userTeams.Any();
                     ViewBag.IsTeamLeader = isTeamLeader;

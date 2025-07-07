@@ -1,0 +1,39 @@
+@model lol.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Выбор компетенций";
+}
+<h2>Выбор компетенций</h2>
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-success">@ViewBag.Message</div>
+}
+<div class="alert alert-info">
+    Выберите компетенции, которые соответствуют вашим навыкам. Эти данные будут видны в вашем профиле и при подаче заявок в команды.
+</div>
+<form asp-action="Competencies" method="post">
+    @foreach (var category in ViewBag.Categories)
+    {
+        <div class="mb-4">
+            <h4 style="color: @category.Color;">@category.Name</h4>
+            <div class="row">
+                @{
+                    var competenciesInCategory = ((IEnumerable<lol.Models.Competency>)ViewBag.Competencies).Where(c => c.CategoryId == category.Id);
+                }
+                @foreach (var competency in competenciesInCategory)
+                {
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="comp_@competency.Id" name="competencyIds" value="@competency.Id" @(ViewBag.UserCompetencies.Contains(competency.Id) ? "checked" : "")>
+                            <label class="form-check-label" for="comp_@competency.Id">@competency.Name</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    <button type="submit" class="btn btn-success">Сохранить</button>
+    <a asp-action="Index" class="btn btn-secondary">Отмена</a>
+</form>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

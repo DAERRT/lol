@@ -3,11 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using lol.Models;
 using System.Security.Claims;
+using lol.Data;
 
 namespace lol.Controllers
 {
     [AllowAnonymous]
-    public class AccountController : Controller
+    public class AccountController : BaseController
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -18,7 +19,8 @@ namespace lol.Controllers
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            lol.Services.EmailSender emailSender)
+            lol.Services.EmailSender emailSender,
+            ApplicationDbContext context) : base(context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -286,4 +288,4 @@ namespace lol.Controllers
             return RedirectToAction("Index", "Home");
         }
     }
-} 
+}

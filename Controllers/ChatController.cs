@@ -6,23 +6,27 @@ using lol.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using lol.Hubs;
+using lol.Data;
 
 namespace lol.Controllers
 {
     [Authorize]
-    public class ChatController : Controller
+    public class ChatController : BaseController
     {
         private readonly ChatService _chatService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly NotificationService _notificationService;
 
-        public ChatController(ChatService chatService, UserManager<ApplicationUser> userManager, IHubContext<ChatHub> hubContext, NotificationService notificationService)
+        private readonly ApplicationDbContext _context;
+
+        public ChatController(ChatService chatService, UserManager<ApplicationUser> userManager, IHubContext<ChatHub> hubContext, NotificationService notificationService, ApplicationDbContext context) : base(context)
         {
             _chatService = chatService;
             _userManager = userManager;
             _hubContext = hubContext;
             _notificationService = notificationService;
+            _context = context;
         }
 
         // Список чатов пользователя

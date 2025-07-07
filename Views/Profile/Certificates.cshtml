@@ -1,0 +1,71 @@
+@model lol.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Управление сертификатами";
+}
+<h2>Управление сертификатами</h2>
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-success">@ViewBag.Message</div>
+}
+<div class="alert alert-info">
+    Загрузите сертификаты или дипломы, подтверждающие ваши компетенции. Эти данные будут видны в вашем профиле и при подаче заявок в команды.
+</div>
+<form asp-action="UploadCertificates" method="post" enctype="multipart/form-data" class="mb-5">
+    <div id="certificateInputs">
+        <div class="form-group mb-3 certificate-row">
+            <label>Сертификат 1</label>
+            <input type="file" name="certificates" class="form-control mb-2" accept="image/*,application/pdf" />
+            <input type="text" name="titles" class="form-control" placeholder="Название сертификата (опционально)" />
+        </div>
+    </div>
+    <button type="button" id="addCertificate" class="btn btn-outline-primary mb-3">Добавить еще сертификат</button>
+    <br />
+    <button type="submit" class="btn btn-success">Загрузить</button>
+    <a asp-action="Index" class="btn btn-secondary">Отмена</a>
+</form>
+
+@if (ViewBag.Certificates != null && ViewBag.Certificates.Count > 0)
+{
+    <h4>Загруженные сертификаты</h4>
+    <div class="row">
+        @foreach (var cert in ViewBag.Certificates)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">@cert.Title</h5>
+                        <p class="card-text">Загружен: @cert.UploadDate.ToString("dd.MM.yyyy HH:mm")</p>
+                        <a href="@cert.FilePath" target="_blank" class="btn btn-sm btn-info">Просмотреть</a>
+                        <form asp-action="DeleteCertificate" method="post" style="display:inline;" onsubmit="return confirm('Вы уверены, что хотите удалить этот сертификат?');">
+                            <input type="hidden" name="id" value="@cert.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">У вас нет загруженных сертификатов.</div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function () {
+            let certCount = 1;
+            $('#addCertificate').click(function () {
+                certCount++;
+                $('#certificateInputs').append(`
+                    <div class="form-group mb-3 certificate-row">
+                        <label>Сертификат ${certCount}</label>
+                        <input type="file" name="certificates" class="form-control mb-2" accept="image/*,application/pdf" />
+                        <input type="text" name="titles" class="form-control" placeholder="Название сертификата (опционально)" />
+                    </div>
+                `);
+            });
+        });
+    </script>
+}

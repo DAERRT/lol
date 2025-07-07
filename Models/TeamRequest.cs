@@ -1,11 +1,19 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace lol.Models
 {
+    public enum RequestStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
     public class TeamRequest
     {
-        [Key]
         public int Id { get; set; }
 
         [Required]
@@ -18,26 +26,19 @@ namespace lol.Models
         [ForeignKey("TeamId")]
         public Team Team { get; set; }
 
-        [Display(Name = "Сообщение")]
-        public string Message { get; set; }
+        public DateTime RequestDate { get; set; } = DateTime.UtcNow;
+        public bool IsApproved { get; set; } = false;
+        public DateTime? ApprovalDate { get; set; }
 
-        [Display(Name = "Статус заявки")]
-        public RequestStatus Status { get; set; }
+        // Competencies at the time of request
+        public string CompetenciesAtRequestJson { get; set; } = string.Empty;
 
-        [Display(Name = "Дата подачи")]
-        public DateTime DateCreated { get; set; }
+        // Certificates at the time of request
+        public string CertificatesAtRequestJson { get; set; } = string.Empty;
 
-        [Display(Name = "Дата рассмотрения")]
+        public RequestStatus Status { get; set; } = RequestStatus.Pending;
+        public string Message { get; set; } = string.Empty;
+        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
         public DateTime? DateProcessed { get; set; }
     }
-
-    public enum RequestStatus
-    {
-        [Display(Name = "На рассмотрении")]
-        Pending,
-        [Display(Name = "Одобрено")]
-        Approved,
-        [Display(Name = "Отклонено")]
-        Rejected
-    }
-} 
+}

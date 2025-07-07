@@ -87,6 +87,12 @@
                                     <a class="nav-link text-dark" asp-controller="Admin" asp-action="Index">Админ-панель</a>
                                 </li>
                             }
+                            @if (ViewBag.HasKanbanAccess == true)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Kanban" asp-action="Index">Канбан-доска</a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
                             </li>
@@ -236,6 +242,69 @@
         console.log('SignalR connection started');
     });
     // --- badge и SignalR обработчики ---
+    function loadNotifications() {
+        $.get('/Notification/GetUserNotifications', function (data) {
+            let unreadCount = data.filter(n => !n.isRead).length;
+            if (unreadCount > 0) {
+                $('#notificationCount').text(unreadCount).show();
+            } else {
+                $('#notificationCount').hide();
+            }
+            let list = '';
+            if (data.length === 0) {
+                list = '<span class="dropdown-item-text">У вас нет уведомлений.</span>';
+            } else {
+                data.slice(0, 5).forEach(function (n) {
+                    list += `
+                        <div class="dropdown-item${n.isRead ? '' : ' fw-bold'}" style="white-space:normal; border-bottom:1px solid #f0f0f0; padding:8px 16px;">
+                            <div>${n.message}</div>
+                            <div class="text-muted small">${new Date(n.createdAt).toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+            }
+            $('#notificationList').html(list);
+        });
+    }
+
+    $(document).ready(function () {
+        // Загрузка при открытии дропдауна
+        $('#notificationDropdown').on('click', function () {
+            loadNotifications();
+        });
+        // Периодическая проверка (например, каждые 60 секунд)
+        setInterval(loadNotifications, 60000);
+        // Первая загрузка
+        loadNotifications();
+    });
+
+    const connection1 = new signalR.HubConnectionBuilder()
+        .withUrl("/notificationHub")
+        .build();
+
+    connection1.on("ReceiveNotification", function (message) {
+        console.log("Получено уведомление через SignalR:", message);
+        loadNotifications();
+        if (typeof loadNotificationsFull === 'function') {
+            loadNotificationsFull();
+        }
+        // Показываем браузерное уведомление
+        if (window.Notification && Notification.permission === "granted") {
+            new Notification("Уведомление", {
+                body: message,
+                icon: "/favicon.ico"
+            });
+        }
+    });
+
+    connection1.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    if (window.Notification && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+    // --- badge и SignalR обработчики для чатов ---
     function updateAllUnreadBadges() {
         console.log('Вызвана updateAllUnreadBadges из layout');
         var $items = $(".chat-list-item");
@@ -322,4 +391,4 @@
     </script>
     @RenderSection("Scripts", required: false)
 </body>
-</html> 
+</html>

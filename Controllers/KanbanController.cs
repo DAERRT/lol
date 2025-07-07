@@ -10,27 +10,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.SignalR;
+using lol.Hubs;
 
 namespace lol.Controllers
 {
     [Authorize]
-    public class KanbanController : Controller
+    public class KanbanController : BaseController
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly NotificationService _notificationService;
         private readonly ILogger<KanbanController> _logger;
+        private readonly IHubContext<KanbanHub> _kanbanHubContext;
 
         public KanbanController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             NotificationService notificationService,
-            ILogger<KanbanController> logger)
+            ILogger<KanbanController> logger,
+            IHubContext<KanbanHub> kanbanHubContext) : base(context)
         {
             _context = context;
             _userManager = userManager;
             _notificationService = notificationService;
             _logger = logger;
+            _kanbanHubContext = kanbanHubContext;
         }
 
         // GET: Kanban/Index
@@ -195,6 +200,21 @@ namespace lol.Controllers
                 _context.Add(model);
                 await _context.SaveChangesAsync();
 
+                // Broadcast the update to all connected clients
+                await _kanbanHubContext.Clients.Group($"KanbanBoard_{projectId}_{teamId}")
+                    .SendAsync("TaskUpdated", "create", new
+                    {
+                        id = model.Id,
+                        title = model.Title,
+                        description = model.Description,
+                        status = model.Status.ToString(),
+                        priority = model.Priority.ToString(),
+                        createdAt = model.CreatedAt,
+                        deadline = model.Deadline,
+                        createdBy = user.UserName,
+                        assignedTo = model.AssignedTo != null ? model.AssignedTo.UserName : "Не назначено"
+                    });
+
                 // Отправляем уведомления всем участникам доски
                 var recipientIds = new List<string>();
                 
@@ -282,6 +302,14 @@ namespace lol.Controllers
             task.Status = request.NewStatus;
             await _context.SaveChangesAsync();
 
+            // Broadcast the update to all connected clients
+            await _kanbanHubContext.Clients.Group($"KanbanBoard_{task.ProjectId}_{task.TeamId}")
+                .SendAsync("TaskUpdated", "updateStatus", new
+                {
+                    id = task.Id,
+                    status = task.Status.ToString()
+                });
+
             return Json(new { success = true });
         }
 
@@ -318,6 +346,19 @@ namespace lol.Controllers
             task.AssignedToId = string.IsNullOrEmpty(assignedToId) ? null : assignedToId;
 
             await _context.SaveChangesAsync();
+
+            // Broadcast the update to all connected clients
+            var assignedToUser = task.AssignedTo != null ? task.AssignedTo.UserName : "Не назначено";
+            await _kanbanHubContext.Clients.Group($"KanbanBoard_{projectId}_{teamId}")
+                .SendAsync("TaskUpdated", "update", new
+                {
+                    id = task.Id,
+                    title = task.Title,
+                    description = task.Description,
+                    priority = task.Priority.ToString(),
+                    deadline = task.Deadline,
+                    assignedTo = assignedToUser
+                });
 
             // Отправляем уведомления всем участникам доски, если задача изменена
             var recipientIds = new List<string>();
@@ -375,6 +416,10 @@ namespace lol.Controllers
 
             _context.KanbanTasks.Remove(task);
             await _context.SaveChangesAsync();
+
+            // Broadcast the update to all connected clients
+            await _kanbanHubContext.Clients.Group($"KanbanBoard_{task.ProjectId}_{task.TeamId}")
+                .SendAsync("TaskUpdated", "delete", new { id = task.Id });
 
             // Отправляем уведомления всем участникам доски
             var recipientIds = new List<string>();

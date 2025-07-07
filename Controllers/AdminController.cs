@@ -12,7 +12,7 @@ using System.Reflection;
 namespace lol.Controllers
 {
     [Authorize(Roles = "Администратор")]
-    public class AdminController : Controller
+    public class AdminController : BaseController
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -25,7 +25,7 @@ namespace lol.Controllers
             RoleManager<IdentityRole> roleManager,
             ILogger<AdminController> logger,
             ApplicationDbContext context,
-            NotificationService notificationService)
+            NotificationService notificationService) : base(context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -414,6 +414,74 @@ namespace lol.Controllers
             }
 
             return RedirectToAction(nameof(CompanyCards));
+        }
+
+        // Управление компетенциями
+        public async Task<IActionResult> Competencies(string searchString)
+        {
+            var competencies = _context.Competencies.Include(c => c.Category).AsQueryable();
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                competencies = competencies.Where(c => c.Name.Contains(searchString) || c.Category.Name.Contains(searchString));
+            }
+            ViewData["searchString"] = searchString;
+            return View(await competencies.ToListAsync());
+        }
+
+        public async Task<IActionResult> CreateCompetency()
+        {
+            ViewBag.Categories = await _context.CompetencyCategories.ToListAsync();
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateCompetency(Competency competency)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Competencies.Add(competency);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Competencies));
+            }
+            ViewBag.Categories = await _context.CompetencyCategories.ToListAsync();
+            return View(competency);
+        }
+
+        public async Task<IActionResult> EditCompetency(int id)
+        {
+            var competency = await _context.Competencies.FindAsync(id);
+            if (competency == null)
+            {
+                return NotFound();
+            }
+            ViewBag.Categories = await _context.CompetencyCategories.ToListAsync();
+            return View(competency);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditCompetency(Competency competency)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Update(competency);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Competencies));
+            }
+            ViewBag.Categories = await _context.CompetencyCategories.ToListAsync();
+            return View(competency);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteCompetency(int id)
+        {
+            var competency = await _context.Competencies.FindAsync(id);
+            if (competency == null)
+            {
+                return NotFound();
+            }
+            _context.Competencies.Remove(competency);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Competencies));
         }
     }
 }

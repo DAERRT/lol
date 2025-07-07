@@ -224,7 +224,121 @@ namespace lol.Data
                 throw;
             }
 
+            // Инициализация категорий компетенций
+            if (!context.CompetencyCategories.Any())
+            {
+                var categories = new CompetencyCategory[]
+                {
+                    new CompetencyCategory { Name = "Языки программирования", Color = "#28a745" },
+                    new CompetencyCategory { Name = "Базы данных", Color = "#007bff" },
+                    new CompetencyCategory { Name = "Фреймворки", Color = "#dc3545" },
+                    new CompetencyCategory { Name = "Софт-скиллы", Color = "#ffc107" },
+                    new CompetencyCategory { Name = "Инструменты разработки", Color = "#17a2b8" },
+                    new CompetencyCategory { Name = "Технологии и платформы", Color = "#6c757d" }
+                };
+                context.CompetencyCategories.AddRange(categories);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Категории компетенций успешно созданы");
+            }
 
+            // Инициализация компетенций
+            if (!context.Competencies.Any())
+            {
+                var programmingCategory = await context.CompetencyCategories.FirstOrDefaultAsync(c => c.Name == "Языки программирования");
+                var databasesCategory = await context.CompetencyCategories.FirstOrDefaultAsync(c => c.Name == "Базы данных");
+                var frameworksCategory = await context.CompetencyCategories.FirstOrDefaultAsync(c => c.Name == "Фреймворки");
+                var softSkillsCategory = await context.CompetencyCategories.FirstOrDefaultAsync(c => c.Name == "Софт-скиллы");
+                var devToolsCategory = await context.CompetencyCategories.FirstOrDefaultAsync(c => c.Name == "Инструменты разработки");
+                var techPlatformsCategory = await context.CompetencyCategories.FirstOrDefaultAsync(c => c.Name == "Технологии и платформы");
+
+                if (programmingCategory != null && databasesCategory != null && frameworksCategory != null && softSkillsCategory != null && devToolsCategory != null && techPlatformsCategory != null)
+                {
+                    var competencies = new Competency[]
+                    {
+                        // Языки программирования
+                        new Competency { Name = "Python", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "JavaScript", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Java", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "C#", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "C++", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "PHP", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Ruby", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Go", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Kotlin", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Swift", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "TypeScript", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Rust", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Scala", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Perl", CategoryId = programmingCategory.Id },
+                        new Competency { Name = "Haskell", CategoryId = programmingCategory.Id },
+
+                        // Базы данных
+                        new Competency { Name = "MySQL", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "PostgreSQL", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "MongoDB", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "SQLite", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "Oracle", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "Microsoft SQL Server", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "Redis", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "Cassandra", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "MariaDB", CategoryId = databasesCategory.Id },
+                        new Competency { Name = "Elasticsearch", CategoryId = databasesCategory.Id },
+
+                        // Фреймворки
+                        new Competency { Name = "React", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Angular", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Vue.js", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Django", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Flask", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Spring", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = ".NET Core", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Laravel", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Ruby on Rails", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Express.js", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Symfony", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "CakePHP", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Bootstrap", CategoryId = frameworksCategory.Id },
+                        new Competency { Name = "Tailwind CSS", CategoryId = frameworksCategory.Id },
+
+                        // Софт-скиллы
+                        new Competency { Name = "Коммуникация", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Работа в команде", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Управление временем", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Решение проблем", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Лидерство", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Адаптивность", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Креативность", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Аналитическое мышление", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Управление конфликтами", CategoryId = softSkillsCategory.Id },
+                        new Competency { Name = "Эмоциональный интеллект", CategoryId = softSkillsCategory.Id },
+
+                        // Инструменты разработки
+                        new Competency { Name = "Git", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "Docker", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "Jenkins", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "Kubernetes", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "GitHub", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "GitLab", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "Bitbucket", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "Jira", CategoryId = devToolsCategory.Id },
+                        new Competency { Name = "Trello", CategoryId = devToolsCategory.Id },
+
+                        // Технологии и платформы
+                        new Competency { Name = "AWS", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "Azure", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "Google Cloud", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "Linux", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "Windows Server", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "Android", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "iOS", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "REST API", CategoryId = techPlatformsCategory.Id },
+                        new Competency { Name = "GraphQL", CategoryId = techPlatformsCategory.Id }
+                    };
+                    context.Competencies.AddRange(competencies);
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Компетенции успешно созданы");
+                }
+            }
         }
     }
-} 
+}

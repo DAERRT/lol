@@ -9,7 +9,7 @@ using lol.Services;
 namespace lol.Controllers
 {
     [Authorize]
-    public class TeamController : Controller
+    public class TeamController : BaseController
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
@@ -20,7 +20,7 @@ namespace lol.Controllers
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext context,
             ILogger<TeamController> logger,
-            NotificationService notificationService)
+            NotificationService notificationService) : base(context)
         {
             _userManager = userManager;
             _context = context;

@@ -9,132 +9,152 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @RenderSection("Styles", required: false)
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">Портал ВШЦТ</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Главная</a>
-                        </li>
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            // Проверяем, есть ли у пользователя доступ к канбан-доске через флаг в ViewBag или другой механизм
-                            @if (ViewBag.HasKanbanAccess == true)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Kanban" asp-action="Index">Канбан-доска</a>
+<body style="display: flex; flex-wrap: wrap; min-height: 100vh; margin: 0; overflow: hidden;">
+    <header style="width: 100%; flex-shrink: 0;">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3" style="width: 100%;">
+            <div class="container-fluid d-flex justify-content-between align-items-center px-3" style="width: 100%;">
+                <div class="d-flex align-items-center">
+                    <a class="navbar-brand" asp-controller="Home" asp-action="Index">Портал ВШЦТ</a>
+                    <button class="btn btn-outline-secondary me-2" type="button" id="sidebarToggle">
+                        <span class="bi bi-list" style="font-size: 1.5rem;"></span>
+                    </button>
+                </div>
+                <div class="d-flex align-items-center">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="nav-item position-relative me-3">
+                            <a class="nav-link text-dark" href="#" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="bi bi-bell" style="font-size: 1.5rem;"></span>
+                                <span id="notificationCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="display:none;">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 350px; max-width: 400px;">
+                                <li id="notificationList">
+                                    <span class="dropdown-item-text">Загрузка...</span>
                                 </li>
-                            }
-                        }
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            @if (User.IsInRole("Администратор"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Index">Админ-панель</a>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form id="clearAllNotificationsForm" asp-controller="Notification" asp-action="ClearAll" method="post" style="display:inline;">
+                                        <button type="submit" class="dropdown-item text-danger text-center">Очистить все</button>
+                                    </form>
                                 </li>
-                            }
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
-                            </li>
-                            @if(!User.IsInRole("Эксперт"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Team" asp-action="Index">Команды</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Project" asp-action="Index">Проекты</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="PublicExchange" asp-action="Index">Биржи проектов</a>
-                                </li>
-                            }
-                            @if (User.IsInRole("Эксперт"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="ExpertReview" asp-action="Index">Оценка проектов</a>
-                                </li>
-                            }
-                            @if (User.IsInRole("Тимлид"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="ProjectApplication" asp-action="MyApplications">Мои заявки</a>
-                                </li>
-                            }
-                            @if (User.IsInRole("Заказчик"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="ProjectApplication" asp-action="Moderation">Модерация заявок</a>
-                                </li>
-                            }
-                            <li class="nav-item position-relative">
-                                <a class="nav-link text-dark" href="#" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="bi bi-bell" style="font-size: 1.5rem;"></span>
-                                    <span id="notificationCount" class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="display:none;">0</span>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 350px; max-width: 400px;">
-                                    <li id="notificationList">
-                                        <span class="dropdown-item-text">Загрузка...</span>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form id="clearAllNotificationsForm" asp-controller="Notification" asp-action="ClearAll" method="post" style="display:inline;">
-                                            <button type="submit" class="dropdown-item text-danger text-center">Очистить все</button>
-                                        </form>
-                                    </li>
-                                    <li><a class="dropdown-item text-center" href="/Notification/Index">Все уведомления</a></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Chat" asp-action="Index" title="Чаты">
-                                    <span class="bi bi-chat-dots" style="font-size: 1.5rem;"></span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">
-                                    @User.Identity.Name
-                                    @{
-                                        var roles = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
-                                        if (roles.Any())
-                                        {
-                                            <small class="text-muted">(@string.Join(", ", roles))</small>
-                                        }
+                                <li><a class="dropdown-item text-center" href="/Notification/Index">Все уведомления</a></li>
+                            </ul>
+                        </div>
+                        <div class="nav-item me-3">
+                            <a class="nav-link text-dark" asp-controller="Chat" asp-action="Index" title="Чаты">
+                                <span class="bi bi-chat-dots" style="font-size: 1.5rem;"></span>
+                            </a>
+                        </div>
+                        <div class="nav-item me-3">
+                            <span class="nav-link text-dark">
+                                @User.Identity.Name
+                                @{
+                                    var roles = User.Claims.Where(c => c.Type == System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
+                                    if (roles.Any())
+                                    {
+                                        <small class="text-muted">(@string.Join(", ", roles))</small>
                                     }
-                                </span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Выйти</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Войти</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Регистрация</a>
-                            </li>
-                        }
-                    </ul>
+                                }
+                            </span>
+                        </div>
+                        <div class="nav-item">
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                <button type="submit" class="btn btn-link nav-link text-dark">Выйти</button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="nav-item me-2">
+                            <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Войти</a>
+                        </div>
+                        <div class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Регистрация</a>
+                        </div>
+                    }
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <div style="display: flex; flex-grow: 1; flex-wrap: nowrap; overflow: hidden; height: calc(100vh - 56px);">
+        <!-- Custom Sidebar -->
+        <div id="sidebar" class="bg-light border-end" style="width: 0; overflow: hidden; transition: width 0.3s ease; height: 100%; overflow-y: auto;">
+            <div class="p-3" style="padding-top: 56px;">
+                <h5>Навигация</h5>
+                <ul class="navbar-nav">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Home" asp-action="Index">Главная</a>
+                    </li>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        @if (ViewBag.HasKanbanAccess == true)
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Kanban" asp-action="Index">Канбан-доска</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Администратор"))
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Admin" asp-action="Index">Админ-панель</a>
+                            </li>
+                        }
+                        <li class="nav-item mb-2">
+                            <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Profile" asp-action="Index">Личный кабинет</a>
+                        </li>
+                        @if (User.IsInRole("Студент") || User.IsInRole("Тимлид"))
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Profile" asp-action="Competencies">Компетенции</a>
+                            </li>
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Profile" asp-action="Certificates">Сертификаты</a>
+                            </li>
+                        }
+                        @if(!User.IsInRole("Эксперт"))
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Team" asp-action="Index">Команды</a>
+                            </li>
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="Project" asp-action="Index">Проекты</a>
+                            </li>
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="PublicExchange" asp-action="Index">Биржи проектов</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Эксперт"))
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="ExpertReview" asp-action="Index">Оценка проектов</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Тимлид"))
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="ProjectApplication" asp-action="MyApplications">Мои заявки</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Заказчик"))
+                        {
+                            <li class="nav-item mb-2">
+                                <a class="nav-link text-dark btn btn-outline-secondary w-100 text-start" asp-controller="ProjectApplication" asp-action="Moderation">Модерация заявок</a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container-fluid" style="flex-grow: 1; transition: flex-grow 0.3s ease; height: 100%; overflow-y: auto;" id="mainContent">
+            <div class="row">
+                <main role="main" class="col pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
     </div>
 
     <footer class="border-top footer text-muted">
@@ -148,6 +168,25 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
+        // Sidebar toggle functionality
+        $(document).ready(function () {
+            let sidebarVisible = false;
+            $('#sidebar').css('width', '0');
+            $('#sidebar').css('overflow', 'hidden');
+            
+            $('#sidebarToggle').on('click', function () {
+                if (sidebarVisible) {
+                    $('#sidebar').css('width', '0');
+                    $('#sidebar').css('overflow', 'hidden');
+                    sidebarVisible = false;
+                } else {
+                    $('#sidebar').css('width', '200px');
+                    $('#sidebar').css('overflow', 'visible');
+                    sidebarVisible = true;
+                }
+            });
+        });
+
         function loadNotifications() {
             $.get('/Notification/GetUserNotifications', function (data) {
                 let unreadCount = data.filter(n => !n.isRead).length;
