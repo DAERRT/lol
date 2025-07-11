@@ -12,8 +12,8 @@ using lol.Data;
 namespace lol.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250706182920_UpdateTeamRequestColumns")]
-    partial class UpdateTeamRequestColumns
+    [Migration("20250711152650__Init")]
+    partial class _Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -316,57 +316,6 @@ namespace lol.Migrations
                     b.ToTable("Certificates");
                 });
 
-            modelBuilder.Entity("lol.Models.Chat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AvatarPath")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<bool>("IsGroup")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsTeamChat")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Chats");
-                });
-
-            modelBuilder.Entity("lol.Models.ChatUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ChatUsers");
-                });
-
             modelBuilder.Entity("lol.Models.CompanyCard", b =>
                 {
                     b.Property<int>("Id")
@@ -551,99 +500,6 @@ namespace lol.Migrations
                     b.HasIndex("TeamId");
 
                     b.ToTable("KanbanTasks");
-                });
-
-            modelBuilder.Entity("lol.Models.Message", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReplyToMessageId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
-
-                    b.HasIndex("ReplyToMessageId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Messages");
-                });
-
-            modelBuilder.Entity("lol.Models.MessageAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContentType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("MessageId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageId");
-
-                    b.ToTable("MessageAttachments");
-                });
-
-            modelBuilder.Entity("lol.Models.MessageRead", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("MessageId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ReadAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MessageId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("MessageReads");
                 });
 
             modelBuilder.Entity("lol.Models.Notification", b =>
@@ -1029,25 +885,6 @@ namespace lol.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("lol.Models.ChatUser", b =>
-                {
-                    b.HasOne("lol.Models.Chat", "Chat")
-                        .WithMany("ChatUsers")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("lol.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("lol.Models.CompanyCard", b =>
                 {
                     b.HasOne("lol.Models.ApplicationUser", "User")
@@ -1122,61 +959,6 @@ namespace lol.Migrations
                     b.Navigation("Project");
 
                     b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("lol.Models.Message", b =>
-                {
-                    b.HasOne("lol.Models.Chat", "Chat")
-                        .WithMany("Messages")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("lol.Models.Message", "ReplyToMessage")
-                        .WithMany()
-                        .HasForeignKey("ReplyToMessageId");
-
-                    b.HasOne("lol.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
-
-                    b.Navigation("ReplyToMessage");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("lol.Models.MessageAttachment", b =>
-                {
-                    b.HasOne("lol.Models.Message", "Message")
-                        .WithMany("Attachments")
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
-                });
-
-            modelBuilder.Entity("lol.Models.MessageRead", b =>
-                {
-                    b.HasOne("lol.Models.Message", "Message")
-                        .WithMany("Reads")
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("lol.Models.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("lol.Models.Notification", b =>
@@ -1277,20 +1059,6 @@ namespace lol.Migrations
                     b.Navigation("CreatedTeams");
 
                     b.Navigation("LedTeams");
-                });
-
-            modelBuilder.Entity("lol.Models.Chat", b =>
-                {
-                    b.Navigation("ChatUsers");
-
-                    b.Navigation("Messages");
-                });
-
-            modelBuilder.Entity("lol.Models.Message", b =>
-                {
-                    b.Navigation("Attachments");
-
-                    b.Navigation("Reads");
                 });
 
             modelBuilder.Entity("lol.Models.Team", b =>

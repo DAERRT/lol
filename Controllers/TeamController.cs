@@ -114,20 +114,7 @@ namespace lol.Controllers
                 _context.Teams.Add(team);
                 await _context.SaveChangesAsync();
                 
-                var chat = new Chat
-                {
-                    Name = team.Name,
-                    IsGroup = true,
-                    IsTeamChat = true
-                };
-                _context.Chats.Add(chat);
-                await _context.SaveChangesAsync();
-
-                // Добавляем создателя в чат
-                _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = user.Id });
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Команда {team.Name} успешно создана");
+                
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -322,20 +309,6 @@ namespace lol.Controllers
             {
                 var user = await _userManager.FindByIdAsync(request.UserId);
                 request.Team.Members.Add(user);
-
-                // Находим командный чат
-                var chat = await _context.Chats
-                    .FirstOrDefaultAsync(c => c.Name == request.Team.Name && c.IsTeamChat);
-
-                if (chat != null)
-                {
-                    // Добавляем пользователя в чат, если его там ещё нет
-                    if (!await _context.ChatUsers.AnyAsync(cu => cu.ChatId == chat.Id && cu.UserId == user.Id))
-                    {
-                        _context.ChatUsers.Add(new ChatUser { ChatId = chat.Id, UserId = user.Id });
-                        await _context.SaveChangesAsync();
-                    }
-                }
             }
 
             await _context.SaveChangesAsync();
@@ -488,20 +461,6 @@ namespace lol.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
             if (team.CreatorId != currentUser.Id && !await _userManager.IsInRoleAsync(currentUser, "Администратор"))
                 return Forbid();
-
-            // Найти и удалить командный чат
-            var teamChat = await _context.Chats
-                .Where(c => c.IsTeamChat && c.Name == team.Name)
-                .Include(c => c.ChatUsers)
-                .Include(c => c.Messages)
-                .FirstOrDefaultAsync();
-
-            if (teamChat != null)
-            {
-                _context.ChatUsers.RemoveRange(teamChat.ChatUsers);
-                _context.Messages.RemoveRange(teamChat.Messages);
-                _context.Chats.Remove(teamChat);
-            }
 
             // Отправляем уведомления всем участникам
             string notifyMessage = $"Команда \"{team.Name}\" была удалена.";

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace lol.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class _Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -55,18 +55,17 @@ namespace lol.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Chats",
+                name: "CompetencyCategories",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsGroup = table.Column<bool>(type: "bit", nullable: false),
-                    IsTeamChat = table.Column<bool>(type: "bit", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Color = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Chats", x => x.Id);
+                    table.PrimaryKey("PK_CompetencyCategories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -217,6 +216,55 @@ namespace lol.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Certificates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UploadDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Certificates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Certificates_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CompanyCards",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompanyName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    ContactDetails = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    DocumentPath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ModeratorComment = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyCards", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CompanyCards_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
                 {
@@ -271,63 +319,23 @@ namespace lol.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ChatUsers",
+                name: "Competencies",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    ChatId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ChatUsers", x => x.Id);
+                    table.PrimaryKey("PK_Competencies", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ChatUsers_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
+                        name: "FK_Competencies_CompetencyCategories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "CompetencyCategories",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ChatUsers_Chats_ChatId",
-                        column: x => x.ChatId,
-                        principalTable: "Chats",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Messages",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ChatId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ReplyToMessageId = table.Column<int>(type: "int", nullable: true),
-                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Messages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Messages_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Messages_Chats_ChatId",
-                        column: x => x.ChatId,
-                        principalTable: "Chats",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Messages_Messages_ReplyToMessageId",
-                        column: x => x.ReplyToMessageId,
-                        principalTable: "Messages",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -379,6 +387,52 @@ namespace lol.Migrations
                         name: "FK_ProjectExchangeProjects_Projects_ProjectsId",
                         column: x => x.ProjectsId,
                         principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KanbanTasks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Priority = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Deadline = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ProjectId = table.Column<int>(type: "int", nullable: false),
+                    TeamId = table.Column<int>(type: "int", nullable: false),
+                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AssignedToId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KanbanTasks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KanbanTasks_AspNetUsers_AssignedToId",
+                        column: x => x.AssignedToId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KanbanTasks_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KanbanTasks_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_KanbanTasks_Teams_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "Teams",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -468,8 +522,13 @@ namespace lol.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     TeamId = table.Column<int>(type: "int", nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    ApprovalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CompetenciesAtRequestJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CertificatesAtRequestJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DateProcessed = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TeamId1 = table.Column<int>(type: "int", nullable: true)
@@ -497,24 +556,25 @@ namespace lol.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MessageAttachments",
+                name: "UserCompetencies",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MessageId = table.Column<int>(type: "int", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FileSize = table.Column<long>(type: "bigint", nullable: false),
-                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    CompetencyId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MessageAttachments", x => x.Id);
+                    table.PrimaryKey("PK_UserCompetencies", x => new { x.CompetencyId, x.UserId });
                     table.ForeignKey(
-                        name: "FK_MessageAttachments_Messages_MessageId",
-                        column: x => x.MessageId,
-                        principalTable: "Messages",
+                        name: "FK_UserCompetencies_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserCompetencies_Competencies_CompetencyId",
+                        column: x => x.CompetencyId,
+                        principalTable: "Competencies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -559,14 +619,19 @@ namespace lol.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChatUsers_ChatId",
-                table: "ChatUsers",
-                column: "ChatId");
+                name: "IX_Certificates_UserId",
+                table: "Certificates",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ChatUsers_UserId",
-                table: "ChatUsers",
+                name: "IX_CompanyCards_UserId",
+                table: "CompanyCards",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Competencies_CategoryId",
+                table: "Competencies",
+                column: "CategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExpertReviews_ExpertId",
@@ -579,24 +644,24 @@ namespace lol.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MessageAttachments_MessageId",
-                table: "MessageAttachments",
-                column: "MessageId");
+                name: "IX_KanbanTasks_AssignedToId",
+                table: "KanbanTasks",
+                column: "AssignedToId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_ChatId",
-                table: "Messages",
-                column: "ChatId");
+                name: "IX_KanbanTasks_CreatedById",
+                table: "KanbanTasks",
+                column: "CreatedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_ReplyToMessageId",
-                table: "Messages",
-                column: "ReplyToMessageId");
+                name: "IX_KanbanTasks_ProjectId",
+                table: "KanbanTasks",
+                column: "ProjectId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_UserId",
-                table: "Messages",
-                column: "UserId");
+                name: "IX_KanbanTasks_TeamId",
+                table: "KanbanTasks",
+                column: "TeamId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_UserId",
@@ -652,6 +717,11 @@ namespace lol.Migrations
                 name: "IX_Teams_LeaderId",
                 table: "Teams",
                 column: "LeaderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserCompetencies_UserId",
+                table: "UserCompetencies",
+                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -673,13 +743,16 @@ namespace lol.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "ChatUsers");
+                name: "Certificates");
+
+            migrationBuilder.DropTable(
+                name: "CompanyCards");
 
             migrationBuilder.DropTable(
                 name: "ExpertReviews");
 
             migrationBuilder.DropTable(
-                name: "MessageAttachments");
+                name: "KanbanTasks");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
@@ -700,10 +773,10 @@ namespace lol.Migrations
                 name: "TeamRequests");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
+                name: "UserCompetencies");
 
             migrationBuilder.DropTable(
-                name: "Messages");
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "ProjectExchanges");
@@ -715,10 +788,13 @@ namespace lol.Migrations
                 name: "Teams");
 
             migrationBuilder.DropTable(
-                name: "Chats");
+                name: "Competencies");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "CompetencyCategories");
         }
     }
 }

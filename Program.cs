@@ -65,7 +65,6 @@ public class Program
         });
 
         builder.Services.AddScoped<NotificationService>();
-        builder.Services.AddScoped<ChatService>();
         builder.Services.AddSignalR();
         builder.Services.AddTransient<lol.Services.EmailSender>();
 
@@ -108,7 +107,6 @@ public class Program
             pattern: "{controller=Home}/{action=Index}/{id?}");
 
         app.MapHub<lol.Hubs.NotificationHub>("/notificationHub");
-        app.MapHub<lol.Hubs.ChatHub>("/chatHub");
         app.MapHub<lol.Hubs.KanbanHub>("/kanbanHub");
 
         app.Run();
